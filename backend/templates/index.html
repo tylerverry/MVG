@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+   <title>Straßenbahn Zeiten</title>
+   <link rel="icon" type="image/png" href="/frontend/favicon.png">
+   <style>
+       :root {
+           --bg-primary: white;
+           --bg-secondary: #f8fafc;
+           --bg-card: #ffffff;
+           --text-primary: #0f172a;
+           --text-secondary: #64748b;
+           --border-color: #e2e8f0;
+       }
+
+       @media (prefers-color-scheme: dark) {
+           :root {
+               --bg-primary: #0f172a;
+               --bg-secondary: #1e293b;
+               --bg-card: #1e293b;
+               --text-primary: #ffffff;
+               --text-secondary: #94a3b8;
+               --border-color: #2d3748;
+           }
+       }
+
+       body {
+           margin: 0;
+           padding: 20px;
+           font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+           background-color: var(--bg-primary);
+           color: var(--text-primary);
+       }
+       
+       .container {
+           max-width: 100%;
+           margin: 0 auto;
+           background-color: var(--bg-secondary);
+           padding: 20px;
+           border-radius: 15px;
+       }
+
+       @media (orientation: landscape) {
+           .container {
+               max-width: 90%;
+           }
+       }
+       
+       .header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           margin-bottom: 20px;
+           padding-bottom: 15px;
+           border-bottom: 1px solid var(--border-color);
+       }
+       
+       .station-name {
+           font-size: 28px;
+           font-weight: bold;
+       }
+       
+       .header-right {
+           display: flex;
+           gap: 20px;
+           color: var(--text-secondary);
+       }
+
+       .section-title {
+           font-size: 20px;
+           font-weight: 600;
+           margin: 20px 0 10px 0;
+           color: var(--text-secondary);
+       }
+
+       .tram-row {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           padding: 15px;
+           margin: 10px 0;
+           background-color: var(--bg-card);
+           border-radius: 10px;
+           transition: transform 0.2s;
+           border: 1px solid var(--border-color);
+       }
+
+       .tram-row.delayed {
+           background-color: #fef2f2;
+       }
+
+       .tram-info {
+           display: flex;
+           align-items: center;
+           gap: 20px;
+       }
+
+       .tram-line {
+           background-color: #3b82f6;
+           color: white;
+           width: 60px;
+           height: 60px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 24px;
+           font-weight: bold;
+           border-radius: 10px;
+       }
+
+       .tram-destination {
+           font-size: 20px;
+       }
+
+       .minutes {
+           font-size: 32px;
+           font-weight: bold;
+       }
+
+       .minutes.soon { color: #22c55e; }
+       .minutes.missed { color: #ef4444; }
+
+       .delayed-tag {
+           color: #ef4444;
+           display: flex;
+           align-items: center;
+           gap: 4px;
+           font-size: 14px;
+       }
+
+       .last-train {
+           text-align: center;
+           margin-top: 30px;
+           padding-top: 20px;
+           border-top: 1px solid var(--border-color);
+           color: var(--text-secondary);
+       }
+
+       .last-updated {
+           text-align: center;
+           margin-top: 10px;
+           font-size: 14px;
+           color: var(--text-secondary);
+       }
+   </style>
+</head>
+<body>
+   <div class="container">
+       <div class="header">
+           <div class="station-name">Prinz-Eugen-Park</div>
+           <div class="header-right">
+               <div class="weather">18°C</div>
+               <div class="time"></div>
+           </div>
+       </div>
+       <div id="content">Lädt...</div>
+       <div class="last-train">
+           <div>Letzte Bahn nach Hause</div>
+           <div>Abfahrt Amalienburgstraße um 00:42, Ankunft Prinz-Eugen-Park um 01:22</div>
+       </div>
+       <div class="last-updated"></div>
+   </div>
+
+   <script>
+       const WALKING_TIME = 6;
+
+       function getTimeClass(minutes) {
+           if (minutes < 5) return 'missed';
+           if (minutes >= WALKING_TIME && minutes <= 8) return 'soon';
+           return '';
+       }
+
+       function updateTime() {
+           const now = new Date();
+           const dateTimeString = now.toLocaleDateString('de-DE', {
+               weekday: 'long',
+               year: 'numeric',
+               month: 'long',
+               day: 'numeric',
+           }) + ', ' + now.toLocaleTimeString('de-DE', {
+               hour: '2-digit',
+               minute: '2-digit'
+           });
+           document.querySelector('.time').textContent = dateTimeString;
+       }
+
+       function updateLastUpdated() {
+           const now = new Date();
+           document.querySelector('.last-updated').textContent = 
+               `Zuletzt aktualisiert: ${now.toLocaleTimeString('de-DE', {
+                   hour: '2-digit',
+                   minute: '2-digit',
+                   second: '2-digit'
+               })}`;
+       }
+
+       async function updateTrams() {
+           try {
+               const response = await fetch('/api/trams');
+               const data = await response.json();
+               
+               let html = `
+                   <div>
+                       <div class="section-title">Südwärts</div>
+                       ${data.southbound.map(tram => `
+                           <div class="tram-row">
+                               <div class="tram-info">
+                                   <div class="tram-line">${tram.line}</div>
+                                   <div class="tram-destination">${tram.destination}</div>
+                               </div>
+                               <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
+                           </div>
+                       `).join('')}
+                   </div>
+                   
+                   <div>
+                       <div class="section-title">Nordwärts</div>
+                       ${data.northbound.map(tram => `
+                           <div class="tram-row">
+                               <div class="tram-info">
+                                   <div class="tram-line">${tram.line}</div>
+                                   <div class="tram-destination">${tram.destination}</div>
+                               </div>
+                               <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
+                           </div>
+                       `).join('')}
+                   </div>
+               `;
+               
+               document.getElementById('content').innerHTML = html;
+               updateLastUpdated();
+           } catch (error) {
+               document.getElementById('content').innerHTML = 'Fehler beim Laden der Straßenbahnzeiten';
+           }
+       }
+
+       // Update time every second
+       setInterval(updateTime, 1000);
+       
+       // Update trams every 30 seconds
+       updateTrams();
+       setInterval(updateTrams, 30000);
+       
+       // Initial time update
+       updateTime();
+   </script>
+</body>
+</html>

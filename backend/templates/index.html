@@ -87,6 +87,10 @@
            border: 1px solid var(--border-color);
        }
 
+       .tram-row.delayed {
+           background-color: #fef2f2;
+       }
+
        .tram-info {
            display: flex;
            align-items: center;
@@ -108,6 +112,9 @@
 
        .tram-destination {
            font-size: 20px;
+           display: flex;
+           align-items: center;
+           gap: 8px;
        }
 
        .minutes {
@@ -118,6 +125,17 @@
        .minutes.soon { color: #22c55e; }
        .minutes.warning { color: #eab308; }
        .minutes.missed { color: #ef4444; }
+
+       .connection-indicator {
+           width: 8px;
+           height: 8px;
+           border-radius: 50%;
+           display: inline-block;
+       }
+
+       .connection-green { background-color: #22c55e; }
+       .connection-yellow { background-color: #eab308; }
+       .connection-red { background-color: #ef4444; }
 
        .last-train {
            text-align: center;
@@ -163,28 +181,16 @@
        const WALKING_TIME = 6;
        let lastUpdateTime = null;
 
-       // Request wake lock to keep screen on
-       if (navigator.wakeLock) {
-           async function requestWakeLock() {
-               try {
-                   await navigator.wakeLock.request('screen');
-               } catch (err) {
-                   console.log(`${err.name}, ${err.message}`);
-               }
-           }
-           requestWakeLock();
-           document.addEventListener('visibilitychange', () => {
-               if (document.visibilityState === 'visible') {
-                   requestWakeLock();
-               }
-           });
-       }
-
        function getTimeClass(minutes) {
            if (minutes <= WALKING_TIME - 1) return 'missed';
            if (minutes <= WALKING_TIME + 1) return 'warning';
            if (minutes <= WALKING_TIME + 3) return 'soon';
            return '';
+       }
+
+       function getConnectionDot(status) {
+           if (!status || status === 'none') return '';
+           return `<span class="connection-indicator connection-${status}"></span>`;
        }
 
        function updateTime() {
@@ -210,47 +216,49 @@
            lastUpdatedElement.classList.toggle('stale', seconds > 45);
        }
 
-       async function updateTrams() {
-           try {
-               const response = await fetch('/api/trams');
-               const data = await response.json();
-               
-               let html = `
-                   <div>
-                       <div class="section-title">Südwärts</div>
-                       ${data.southbound.slice(0, 4).map(tram => `
-                           <div class="tram-row">
-                               <div class="tram-info">
-                                   <div class="tram-line">${tram.line}</div>
-                                   <div class="tram-destination">${tram.destination}</div>
-                               </div>
-                               <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
-                           </div>
-                       `).join('')}
-                   </div>
-                   
-                   <div>
-                       <div class="section-title">Nordwärts</div>
-                       ${data.northbound.slice(0, 4).map(tram => `
-                           <div class="tram-row">
-                               <div class="tram-info">
-                                   <div class="tram-line">${tram.line}</div>
-                                   <div class="tram-destination">${tram.destination}</div>
-                               </div>
-                               <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
-                           </div>
-                       `).join('')}
-                   </div>
-               `;
-               
-               document.getElementById('content').innerHTML = html;
-               lastUpdateTime = new Date();
-               updateTimeSinceRefresh();
-           } catch (error) {
-               document.getElementById('content').innerHTML = 'Fehler beim Laden der Straßenbahnzeiten';
-           }
-       }
-
+      async function updateTrams() {
+    try {
+        const response = await fetch('/api/data');
+        const data = await response.json();
+        
+        let html = `
+            <div>
+                <div class="section-title">Nordwärts</div>
+                ${data.trams.northbound.slice(0, 4).map(tram => `
+                    <div class="tram-row">
+                        <div class="tram-info">
+                            <div class="tram-line">${tram.line}</div>
+                            <div class="tram-destination">
+                                ${tram.destination}
+                                ${tram.connection ? getConnectionDot(tram.connection.status) : ''}
+                            </div>
+                        </div>
+                        <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div>
+                <div class="section-title">Südwärts</div>
+                ${data.trams.southbound.slice(0, 4).map(tram => `
+                    <div class="tram-row">
+                        <div class="tram-info">
+                            <div class="tram-line">${tram.line}</div>
+                            <div class="tram-destination">${tram.destination}</div>
+                        </div>
+                        <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        document.getElementById('content').innerHTML = html;
+        lastUpdateTime = new Date();
+        updateTimeSinceRefresh();
+    } catch (error) {
+        document.getElementById('content').innerHTML = 'Fehler beim Laden der Straßenbahnzeiten';
+    }
+}
        // Update time every second
        setInterval(updateTime, 1000);
        setInterval(updateTimeSinceRefresh, 1000);
@@ -261,6 +269,23 @@
        
        // Initial time update
        updateTime();
+
+       // Request wake lock to keep screen on
+       if (navigator.wakeLock) {
+           async function requestWakeLock() {
+               try {
+                   await navigator.wakeLock.request('screen');
+               } catch (err) {
+                   console.log(`${err.name}, ${err.message}`);
+               }
+           }
+           requestWakeLock();
+           document.addEventListener('visibilitychange', () => {
+               if (document.visibilityState === 'visible') {
+                   requestWakeLock();
+               }
+           });
+       }
    </script>
 </body>
 </html>

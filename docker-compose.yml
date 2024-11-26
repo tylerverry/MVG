@@ -1,26 +1,25 @@
 version: '3.8'
 
 services:
-  backend:
+  tram-service:
     build:
       context: .
-      dockerfile: Dockerfile
+    container_name: tram-service
+    command: ["python", "/app/backend/tram_times.py"]
     ports:
       - "5000:5000"
-    volumes:
-      - ./backend:/app
-    environment:
-      - FLASK_ENV=development
-    depends_on:
-      - frontend
+    networks:
+      - app-network
 
-  frontend:
+  bus-service:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+    container_name: bus-service
+    command: ["python", "/app/backend/bus_times.py"]
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/usr/src/app
-    stdin_open: true
-    tty: true
+      - "5001:5001"
+    networks:
+      - app-network
+
+networks:
+  app-network:

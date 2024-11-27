@@ -1,68 +1,59 @@
-from mvg import MvgApi
-from datetime import datetime, timedelta
-
-def get_combined_departures(station_id, iterations=3, step=20):
-    """
-    Fetch departures by simulating time offset via multiple API calls.
-    
-    :param station_id: The ID of the station to query.
-    :param iterations: Number of sequential calls to simulate offset.
-    :param step: Minutes to step forward with each iteration.
-    :return: A list of departures (unfiltered for debugging).
-    """
-    mvg = MvgApi(station_id)
-    current_time = datetime.now()
-    all_departures = []
-
-    try:
-        for i in range(iterations):
-            # Calculate the time range for this iteration
-            offset_time = current_time + timedelta(minutes=i * step)
-            departures = mvg.departures()  # Fetch API data
-            
-            # Debug: Log all departures
-            print(f"Iteration {i + 1}, Offset: {offset_time}")
-            for dep in departures:
-                print(f"Bus {dep.get('line')} to {dep.get('destination')} at {dep.get('planned')}")
-
-            all_departures.extend(departures)  # Add all departures for debugging
-        
-        return all_departures
-    except Exception as e:
-        print(f"Error fetching combined departures: {e}")
-        return []
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 def get_bus_departures():
-    """Get unique bus departures from St. Emmeram."""
-    station_id = "de:09162:600"  # Replace with the correct station ID
-    all_departures = get_combined_departures(station_id, iterations=5, step=20)
+    """
+    Generate the hardcoded schedule for bus 189 to Unterföhring.
+    
+    The bus runs every 20 minutes from 6:08 to 19:48,
+    with departures at :08, :28, and :48 past each hour.
+    
+    Returns:
+        dict: Contains a list of future bus departures with timestamps in UTC
+              to match the MVG API's timestamp format
+    """
+    try:
+        # Initialize timezones - we need both because we're converting between them
+        berlin_tz = ZoneInfo("Europe/Berlin")
+        utc_tz = ZoneInfo("UTC")
+        
+        # Get current date in Berlin time (for schedule generation)
+        current_date = datetime.now(berlin_tz).date()
+        # Get current timestamp in UTC (for filtering past departures)
+        current_timestamp = int(datetime.now(utc_tz).timestamp())
+        
+        bus_departures = []
+        
+        # Define the schedule boundaries in Berlin time
+        start_time = time(6, 8)   # First bus at 06:08
+        end_time = time(19, 48)   # Last bus at 19:48
+        
+        current_time = start_time
+        while current_time <= end_time:
+            # Create a datetime object for this departure in Berlin time
+            departure = datetime.combine(current_date, current_time)
+            departure = departure.replace(tzinfo=berlin_tz)
+            
+            # Convert to UTC timestamp to match MVG API format
+            utc_departure = departure.astimezone(utc_tz)
+            timestamp = int(utc_departure.timestamp())
+            
+            # Only include future departures
+            if timestamp > current_timestamp:
+                minutes_until = int((timestamp - current_timestamp) / 60)
+                bus_departures.append({
+                    "line": "189",
+                    "destination": "Unterföhring",
+                    "timestamp": timestamp,  # UTC timestamp
+                    "minutes": minutes_until
+                })
+            
+            # Move to next departure time (20 minute intervals)
+            departure = departure + timedelta(minutes=20)
+            current_time = departure.time()
 
-    # Remove duplicates by converting to a dictionary with a unique key
-    unique_departures = {
-        (dep.get("line"), dep.get("destination"), dep.get("planned")): dep
-        for dep in all_departures
-        if dep.get("type") == "Bus"  # Only keep buses
-    }
+        return {"buses": bus_departures}
 
-    # Debug: Print unique departures
-    print("\nUnique Bus Departures:")
-    for key, dep in unique_departures.items():
-        print(f"Bus {dep.get('line')} to {dep.get('destination')} at {dep.get('planned')}")
-
-    # Prepare the bus departures list
-    bus_departures = []
-    for dep in unique_departures.values():
-        current_time = datetime.now().timestamp()
-        planned_time = dep.get("planned", 0)
-        minutes = int((planned_time - current_time) // 60)
-
-        if minutes >= 0:  # Only future departures
-            bus_departures.append({
-                "line": dep.get("line", "Unknown"),
-                "destination": dep.get("destination", "Unknown"),
-                "minutes": minutes,
-                "timestamp": planned_time
-            })
-
-    bus_departures.sort(key=lambda x: x["minutes"])
-    return {"buses": bus_departures}
+    except Exception as e:
+        print(f"Error generating bus schedule: {str(e)}")
+        return {"buses": []}

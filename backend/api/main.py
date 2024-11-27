@@ -23,16 +23,15 @@ def get_combined_data():
         trams = get_tram_departures()
         buses = get_bus_departures()
         
-        # Calculate connections for northbound trams
-        connections = calculate_connections(
+        # Calculate connections and update northbound trams directly
+        trams['northbound'] = calculate_connections(
             northbound_trams=trams['northbound'],
-            buses=buses['buses']
+            buses=buses
         )
         
         return jsonify({
             'trams': trams,
             'buses': buses,
-            'connections': connections,
             'lastUpdated': datetime.now().isoformat()
         })
     except Exception as e:

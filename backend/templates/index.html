@@ -1,297 +1,269 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-   <meta name="apple-mobile-web-app-capable" content="yes">
-   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   <meta name="apple-mobile-web-app-title" content="Straßenbahn Zeiten">
-   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-   <link rel="icon" type="image/png" href="/static/favicon.png">
-   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-   <title>Straßenbahn Zeiten</title>  
-   <style>
-       :root {
-           --bg-primary: white;
-           --bg-secondary: #f8fafc;
-           --bg-card: #ffffff;
-           --text-primary: #0f172a;
-           --text-secondary: #64748b;
-           --border-color: #e2e8f0;
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MVG Transport Display</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --line-box-color: #3b82f6;
+            --connection-green: #22c55e;
+            --connection-yellow: #eab308;
+            --connection-red: #ef4444;
+        }
 
-       @media (prefers-color-scheme: dark) {
-           :root {
-               --bg-primary: #0f172a;
-               --bg-secondary: #1e293b;
-               --bg-card: #1e293b;
-               --text-primary: #ffffff;
-               --text-secondary: #94a3b8;
-               --border-color: #2d3748;
-           }
-       }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1b2838;
+                --text-color: #ffffff;
+                --border-color: rgba(255, 255, 255, 0.1);
+            }
+        }
 
-       body {
-           margin: 0;
-           padding: 20px;
-           font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-           background-color: var(--bg-primary);
-           color: var(--text-primary);
-       }
-       
-       .container {
-           max-width: 100%;
-           margin: 0 auto;
-           background-color: var(--bg-secondary);
-           padding: 20px;
-           border-radius: 15px;
-       }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
 
-       @media (orientation: landscape) {
-           .container {
-               max-width: 90%;
-           }
-       }
-       
-       .header {
-           display: flex;
-           justify-content: space-between;
-           align-items: center;
-           margin-bottom: 20px;
-           padding-bottom: 15px;
-           border-bottom: 1px solid var(--border-color);
-       }
-       
-       .station-name {
-           font-size: 28px;
-           font-weight: bold;
-       }
-       
-       .header-right {
-           display: flex;
-           gap: 20px;
-           color: var(--text-secondary);
-       }
+        .container {
+            width: 100%;
+            margin: 0 auto;
+        }
 
-       .section-title {
-           font-size: 20px;
-           font-weight: 600;
-           margin: 20px 0 10px 0;
-           color: var(--text-secondary);
-       }
+        @media (orientation: landscape) {
+            .container {
+                width: 90%;
+            }
+        }
 
-       .tram-row {
-           display: flex;
-           justify-content: space-between;
-           align-items: center;
-           padding: 15px;
-           margin: 10px 0;
-           background-color: var(--bg-card);
-           border-radius: 10px;
-           transition: transform 0.2s;
-           border: 1px solid var(--border-color);
-       }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-       .tram-row.delayed {
-           background-color: #fef2f2;
-       }
+        .station-name {
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-       .tram-info {
-           display: flex;
-           align-items: center;
-           gap: 20px;
-       }
+        .header-right {
+            display: flex;
+            gap: 20px;
+            text-align: right;
+        }
 
-       .tram-line {
-           background-color: #3b82f6;
-           color: white;
-           width: 60px;
-           height: 60px;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           font-size: 24px;
-           font-weight: bold;
-           border-radius: 10px;
-       }
+        .weather-temp {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
 
-       .tram-destination {
-           font-size: 20px;
-           display: flex;
-           align-items: center;
-           gap: 8px;
-       }
+        .weather-high-low {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
 
-       .minutes {
-           font-size: 32px;
-           font-weight: bold;
-       }
+        .datetime {
+            font-size: 1rem;
+        }
 
-       .minutes.soon { color: #22c55e; }
-       .minutes.warning { color: #eab308; }
-       .minutes.missed { color: #ef4444; }
+        .direction-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+        }
 
-       .connection-indicator {
-           width: 8px;
-           height: 8px;
-           border-radius: 50%;
-           display: inline-block;
-       }
+        .departure {
+            display: grid;
+            grid-template-columns: 60px 1fr auto;
+            gap: 20px;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
 
-       .connection-green { background-color: #22c55e; }
-       .connection-yellow { background-color: #eab308; }
-       .connection-red { background-color: #ef4444; }
+        .line-number {
+            background-color: var(--line-box-color);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
 
-       .last-train {
-           text-align: center;
-           margin-top: 30px;
-           padding-top: 20px;
-           border-top: 1px solid var(--border-color);
-           color: var(--text-secondary);
-       }
+        .destination {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-       .last-updated {
-           text-align: center;
-           margin-top: 10px;
-           font-size: 14px;
-           opacity: 0.5;
-           transition: all 0.3s ease;
-           color: var(--text-secondary);
-       }
+        .connection-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
 
-       .last-updated.stale {
-           color: #ef4444;
-           opacity: 1;
-       }
-   </style>
+        .connection-good { background-color: var(--connection-green); }
+        .connection-medium { background-color: var(--connection-yellow); }
+        .connection-poor { background-color: var(--connection-red); }
+
+        .minutes {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .minutes.soon { color: var(--connection-red); }
+        .minutes.approaching { color: var(--connection-yellow); }
+        .minutes.normal { color: var(--connection-green); }
+
+        .last-updated {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .stale {
+            color: var(--connection-red);
+        }
+    </style>
 </head>
 <body>
-   <div class="container">
-       <div class="header">
-           <div class="station-name">Prinz-Eugen-Park</div>
-           <div class="header-right">
-               <div class="weather">18°C</div>
-               <div class="time"></div>
-           </div>
-       </div>
-       <div id="content">Lädt...</div>
-       <div class="last-train">
-           <div>Letzte Bahn nach Hause</div>
-           <div>Abfahrt Amalienburgstraße um 00:42, Ankunft Prinz-Eugen-Park um 01:22</div>
-       </div>
-       <div class="last-updated"></div>
-   </div>
+    <div class="container">
+        <div class="header">
+            <div class="station-name">
+                Prinz-Eugen-Park
+            </div>
 
-   <script>
-       const WALKING_TIME = 6;
-       let lastUpdateTime = null;
+            <div class="header-right">
+                <div class="weather">
+                    <div class="weather-temp">--°C</div>
+                    <div class="weather-high-low">--° / --°</div>
+                </div>
 
-       function getTimeClass(minutes) {
-           if (minutes <= WALKING_TIME - 1) return 'missed';
-           if (minutes <= WALKING_TIME + 1) return 'warning';
-           if (minutes <= WALKING_TIME + 3) return 'soon';
-           return '';
-       }
+                <div class="datetime"></div>
+            </div>
+        </div>
 
-       function getConnectionDot(status) {
-           if (!status || status === 'none') return '';
-           return `<span class="connection-indicator connection-${status}"></span>`;
-       }
+        <div id="content">Lädt...</div>
 
-       function updateTime() {
-           const now = new Date();
-           const dateTimeString = now.toLocaleDateString('de-DE', {
-               weekday: 'long',
-               year: 'numeric',
-               month: 'long',
-               day: 'numeric',
-           }) + ', ' + now.toLocaleTimeString('de-DE', {
-               hour: '2-digit',
-               minute: '2-digit'
-           });
-           document.querySelector('.time').textContent = dateTimeString;
-       }
+        <div class="last-updated"></div>
+    </div>
 
-       function updateTimeSinceRefresh() {
-           if (!lastUpdateTime) return;
-           const now = new Date();
-           const seconds = Math.floor((now - lastUpdateTime) / 1000);
-           const lastUpdatedElement = document.querySelector('.last-updated');
-           lastUpdatedElement.textContent = `Letzte Aktualisierung vor ${seconds} Sekunden`;
-           lastUpdatedElement.classList.toggle('stale', seconds > 45);
-       }
+    <script>
+        let refreshTime = null;
+        const WALKING_TIME = 6;
 
-      async function updateTrams() {
-    try {
-        const response = await fetch('/api/data');
-        const data = await response.json();
-        
-        let html = `
-            <div>
-                <div class="section-title">Nordwärts</div>
-                ${data.trams.northbound.slice(0, 4).map(tram => `
-                    <div class="tram-row">
-                        <div class="tram-info">
-                            <div class="tram-line">${tram.line}</div>
-                            <div class="tram-destination">
+        function formatDateTime() {
+            return new Date().toLocaleString('de-DE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getConnectionClass(connection) {
+            return connection ? `connection-${connection.status}` : '';
+        }
+
+        function getMinutesClass(minutes) {
+            if (minutes <= (WALKING_TIME - 1)) return 'soon';
+            if (minutes <= (WALKING_TIME + 1)) return 'approaching';
+            if (minutes <= (WALKING_TIME + 3)) return 'normal';
+            return '';
+        }
+
+        function updateDisplay(data) {
+            const content = document.getElementById('content');
+            const { trams, weather } = data;
+
+            if (weather) {
+                document.querySelector('.weather-temp').textContent = `${weather.temp}°C`;
+                document.querySelector('.weather-high-low').textContent = 
+                    `${weather.temp_min}° / ${weather.temp_max}°`;
+            }
+
+            document.querySelector('.datetime').textContent = formatDateTime();
+
+            content.innerHTML = `
+                <div class="direction-group">
+                    <div class="direction-header">Nordwärts</div>
+                    ${trams.northbound.map(tram => `
+                        <div class="departure">
+                            <div class="line-number">${tram.line}</div>
+                            <div class="destination">
                                 ${tram.destination}
-                                ${tram.connection ? getConnectionDot(tram.connection.status) : ''}
+                                <div class="connection-indicator ${getConnectionClass(tram.connection)}"></div>
                             </div>
+                            <div class="minutes ${getMinutesClass(tram.minutes)}">${tram.minutes}</div>
                         </div>
-                        <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
-                    </div>
-                `).join('')}
-            </div>
-            
-            <div>
-                <div class="section-title">Südwärts</div>
-                ${data.trams.southbound.slice(0, 4).map(tram => `
-                    <div class="tram-row">
-                        <div class="tram-info">
-                            <div class="tram-line">${tram.line}</div>
-                            <div class="tram-destination">${tram.destination}</div>
-                        </div>
-                        <div class="minutes ${getTimeClass(tram.minutes)}">${tram.minutes}'</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        
-        document.getElementById('content').innerHTML = html;
-        lastUpdateTime = new Date();
-        updateTimeSinceRefresh();
-    } catch (error) {
-        document.getElementById('content').innerHTML = 'Fehler beim Laden der Straßenbahnzeiten';
-    }
-}
-       // Update time every second
-       setInterval(updateTime, 1000);
-       setInterval(updateTimeSinceRefresh, 1000);
-       
-       // Update trams every 20 seconds
-       updateTrams();
-       setInterval(updateTrams, 20000);
-       
-       // Initial time update
-       updateTime();
+                    `).join('')}
+                </div>
 
-       // Request wake lock to keep screen on
-       if (navigator.wakeLock) {
-           async function requestWakeLock() {
-               try {
-                   await navigator.wakeLock.request('screen');
-               } catch (err) {
-                   console.log(`${err.name}, ${err.message}`);
-               }
-           }
-           requestWakeLock();
-           document.addEventListener('visibilitychange', () => {
-               if (document.visibilityState === 'visible') {
-                   requestWakeLock();
-               }
-           });
-       }
-   </script>
+                <div class="direction-group">
+                    <div class="direction-header">Südwärts</div>
+                    ${trams.southbound.map(tram => `
+                        <div class="departure">
+                            <div class="line-number">${tram.line}</div>
+                            <div class="destination">${tram.destination}</div>
+                            <div class="minutes ${getMinutesClass(tram.minutes)}">${tram.minutes}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            refreshTime = Math.floor(Date.now() / 1000);
+            document.querySelector('.last-updated').textContent = 'Letzte Aktualisierung vor 0 Sekunden';
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/data');
+                if (!response.ok) throw new Error(response.statusText);
+                const data = await response.json();
+                updateDisplay(data);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('content').textContent = 'Fehler beim Laden der Daten.';
+            }
+        }
+
+        setInterval(() => {
+            document.querySelector('.datetime').textContent = formatDateTime();
+        }, 1000);
+
+        setInterval(() => {
+            if (!refreshTime) return;
+            const now = Math.floor(Date.now() / 1000);
+            const seconds = now - refreshTime;
+            const lastUpdated = document.querySelector('.last-updated');
+            lastUpdated.textContent = `Letzte Aktualisierung vor ${seconds} Sekunden`;
+            lastUpdated.classList.toggle('stale', seconds > 45);
+        }, 1000);
+
+        fetchData();
+        setInterval(fetchData, 15000);
+    </script>
 </body>
 </html>

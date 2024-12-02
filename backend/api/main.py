@@ -1,9 +1,22 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, make_response
 from flask_cors import CORS
-from datetime import datetime
-from .services.tram_service import get_tram_departures
-from .services.bus_service import get_bus_departures
-from .services.connection_service import calculate_connections
+from datetime import datetime, timedelta
+import logging
+import sys
+from pathlib import Path
+import requests
+
+# Add the parent directory to sys.path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Now import from backend
+from backend.api.services.tram_service import get_tram_departures
+from backend.api.services.bus_service import get_bus_departures
+from backend.api.services.connection_service import calculate_connections
+from backend.api.services.weather_service import weather_service
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, 
     static_folder='../static',
@@ -11,48 +24,42 @@ app = Flask(__name__,
 )
 CORS(app)
 
+def add_cache_headers(response, max_age=15):
+    """Add appropriate cache headers to response"""
+    response.headers['Cache-Control'] = f'public, max-age={max_age}'
+    response.headers['Expires'] = (
+        datetime.utcnow() + timedelta(seconds=max_age)
+    ).strftime('%a, %d %b %Y %H:%M:%S GMT')
+    return response
+
 @app.route('/')
 def home():
-    return render_template('index.html')
+    response = make_response(render_template('index.html'))
+    return add_cache_headers(response, max_age=3600)
 
 @app.route('/api/data')
 def get_combined_data():
-    """Get all transport data including connections"""
     try:
-        # Get base data
         trams = get_tram_departures()
         buses = get_bus_departures()
+        weather = weather_service.get_weather()
         
-        # Calculate connections and update northbound trams directly
         trams['northbound'] = calculate_connections(
             northbound_trams=trams['northbound'],
             buses=buses
         )
         
-        return jsonify({
+        response = make_response(jsonify({
             'trams': trams,
             'buses': buses,
-            'lastUpdated': datetime.now().isoformat()
-        })
+            'weather': weather,
+            'lastUpdated': int(datetime.now().timestamp())
+        }))
+        return add_cache_headers(response, max_age=15)
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Keep individual endpoints for flexibility
-@app.route('/api/trams')
-def get_trams():
-    """Get only tram data"""
-    try:
-        return jsonify(get_tram_departures())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/buses')
-def get_buses():
-    """Get only bus data"""
-    try:
-        return jsonify(get_bus_departures())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error in combined data endpoint: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

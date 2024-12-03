@@ -9,6 +9,7 @@
             --bg-color: #ffffff;
             --text-color: #000000;
             --border-color: rgba(0, 0, 0, 0.1);
+            --secondary-text: #666666;
             --line-box-color: #3b82f6;
             --connection-green: #22c55e;
             --connection-yellow: #eab308;
@@ -20,6 +21,7 @@
                 --bg-color: #1b2838;
                 --text-color: #ffffff;
                 --border-color: rgba(255, 255, 255, 0.1);
+                --secondary-text: #999999;
             }
         }
 
@@ -44,9 +46,6 @@
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
             padding-bottom: 15px;
             margin-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
@@ -55,26 +54,34 @@
         .station-name {
             font-size: 28px;
             font-weight: bold;
+            margin-bottom: 5px;
         }
 
-        .header-right {
+        .header-info {
+            color: var(--secondary-text);
             display: flex;
-            gap: 20px;
-            text-align: right;
+            align-items: center;
+            font-size: 16px;
+            white-space: nowrap;
         }
 
-        .weather-temp {
-            font-size: 1.2rem;
-            font-weight: bold;
+        .weather-info, .temp-range, .datetime {
+            display: flex;
+            align-items: center;
         }
 
-        .weather-high-low {
-            font-size: 0.8rem;
-            opacity: 0.8;
+        .weather-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
         }
 
-        .datetime {
-            font-size: 1rem;
+        .temp, .temp-range {
+            padding: 0 4px;
+        }
+
+        .divider {
+            padding: 0 12px;
         }
 
         .direction-header {
@@ -152,13 +159,14 @@
             <div class="station-name">
                 Prinz-Eugen-Park
             </div>
-
-            <div class="header-right">
-                <div class="weather">
-                    <div class="weather-temp">--°C</div>
-                    <div class="weather-high-low">--° / --°</div>
+            <div class="header-info">
+                <div class="weather-info">
+                    <img class="weather-icon" src="" alt="Weather">
+                    <span class="temp"></span>
                 </div>
-
+                <span class="divider">•</span>
+                <div class="temp-range"></div>
+                <span class="divider">•</span>
                 <div class="datetime"></div>
             </div>
         </div>
@@ -173,14 +181,19 @@
         const WALKING_TIME = 6;
 
         function formatDateTime() {
-            return new Date().toLocaleString('de-DE', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
+            const now = new Date();
+            const time = now.toLocaleTimeString('de-DE', {
                 hour: '2-digit',
                 minute: '2-digit'
             });
+            const weekday = now.toLocaleDateString('de-DE', {
+                weekday: 'long'
+            });
+            const date = now.toLocaleDateString('de-DE', {
+                day: 'numeric',
+                month: 'long'
+            });
+            return `${time}  •  ${weekday}  •  ${date}`;
         }
 
         function getConnectionClass(connection) {
@@ -199,9 +212,13 @@
             const { trams, weather } = data;
 
             if (weather) {
-                document.querySelector('.weather-temp').textContent = `${weather.temp}°C`;
-                document.querySelector('.weather-high-low').textContent = 
-                    `${weather.temp_min}° / ${weather.temp_max}°`;
+                const weatherIcon = document.querySelector('.weather-icon');
+                weatherIcon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+                weatherIcon.alt = weather.description;
+                
+                document.querySelector('.temp').textContent = `${weather.temp}°C`;
+                document.querySelector('.temp-range').textContent = 
+                    `↑${weather.temp_max}° ↓${weather.temp_min}°`;
             }
 
             document.querySelector('.datetime').textContent = formatDateTime();

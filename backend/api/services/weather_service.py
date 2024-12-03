@@ -14,18 +14,50 @@ class WeatherService:
         self.CACHE_DURATION = timedelta(minutes=15)
 
     def _is_cache_valid(self):
-        """Check if cached data is still valid"""
         if not self.cache or not self.cache_time:
             return False
         return datetime.now() - self.cache_time < self.CACHE_DURATION
 
+    def _get_daily_minmax(self):
+        """Get forecast min/max temperatures for the next 12 hours"""
+        try:
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            params = {
+                "lat": self.LAT,
+                "lon": self.LON,
+                "appid": self.API_KEY,
+                "units": "metric"
+            }
+            
+            response = requests.get(url, params=params, timeout=5)
+            response.raise_for_status()
+            forecast_data = response.json()
+            
+            now = datetime.now()
+            forecast_window = now + timedelta(hours=12)
+            
+            relevant_forecasts = [
+                item for item in forecast_data['list']
+                if now.timestamp() <= item['dt'] <= forecast_window.timestamp()
+            ]
+            
+            if relevant_forecasts:
+                temps = [item['main']['temp'] for item in relevant_forecasts]
+                return round(min(temps)), round(max(temps))
+            
+            return None, None
+                
+        except Exception as e:
+            logger.error(f"Error fetching forecast: {str(e)}")
+            return None, None
+
     def get_weather(self):
-        """Get weather data, using cache if valid"""
+        """Get current weather and daily forecast"""
         try:
             if self._is_cache_valid():
                 return self.cache
 
-            url = f"https://api.openweathermap.org/data/2.5/weather"
+            url = "https://api.openweathermap.org/data/2.5/weather"
             params = {
                 "lat": self.LAT,
                 "lon": self.LON,
@@ -37,10 +69,13 @@ class WeatherService:
             response.raise_for_status()
             weather_data = response.json()
 
+            # Get daily min/max
+            daily_min, daily_max = self._get_daily_minmax()
+
             processed_data = {
                 "temp": round(weather_data["main"]["temp"]),
-                "temp_min": round(weather_data["main"]["temp_min"]),
-                "temp_max": round(weather_data["main"]["temp_max"]),
+                "temp_min": daily_min if daily_min is not None else round(weather_data["main"]["temp_min"]),
+                "temp_max": daily_max if daily_max is not None else round(weather_data["main"]["temp_max"]),
                 "humidity": weather_data["main"]["humidity"],
                 "wind_speed": round(weather_data["wind"]["speed"] * 3.6, 1),  # m/s to km/h
                 "condition": weather_data["weather"][0]["main"].lower(),

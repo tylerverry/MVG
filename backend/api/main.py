@@ -37,6 +37,46 @@ def home():
     response = make_response(render_template('index.html'))
     return add_cache_headers(response, max_age=3600)
 
+@app.route('/api/weather/debug')
+def weather_debug():
+    try:
+        # Try current weather first
+        current = requests.get(
+            "https://api.openweathermap.org/data/2.5/weather",
+            params={
+                "lat": "48.16381",
+                "lon": "11.63320",
+                "appid": "535155cbe44494b5bb60c08cfe379f60",
+                "units": "metric"
+            },
+            timeout=5
+        )
+        current.raise_for_status()
+
+        # Then try forecast
+        forecast = requests.get(
+            "https://api.openweathermap.org/data/2.5/forecast",
+            params={
+                "lat": "48.16381",
+                "lon": "11.63320",
+                "appid": "535155cbe44494b5bb60c08cfe379f60",
+                "units": "metric"
+            },
+            timeout=5
+        )
+        forecast.raise_for_status()
+        
+        return jsonify({
+            "current_weather": current.json(),
+            "forecast": forecast.json(),
+            "weather_service": weather_service.get_weather()
+        })
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "type": type(e).__name__
+        }), 500
+    
 @app.route('/api/data')
 def get_combined_data():
     try:

@@ -7,29 +7,47 @@
     <style>
         /* Root Variables */
         :root {
-            /* General Colors */
-            --bg-color: rgb(255, 255, 255);
-            --text-color: rgb(0, 0, 0);
-            --border-color: rgb(229, 231, 235); /* Light gray */
-            --secondary-text: rgb(107, 114, 128);
+                /* General Colors */
+                --bg-color: rgb(245, 245, 245); /* Main Background */
+                --text-color: rgb(0, 0, 0); /* Primary Text */
+                --border-color: rgb(200, 200, 200); /* General Border */
+                --secondary-text: rgb(100, 100, 100); /* Secondary Text */
 
-            /* Accent Colors */
-            --line-box-color: rgb(59, 130, 246); /* Blue */
-            --card-bg: rgb(247, 249, 253);  /* Light mode header boxes */
+                /* Accent Colors */
+                --line-box-color: rgb(59, 130, 246); /* Bright Blue */
+                --card-bg: rgb(240, 248, 255); /* Light Header Boxes (Light Blue Tint) */
 
-            /* Connection Colors */
-            --connection-green: rgb(34, 197, 94); /* Green */
-            --connection-yellow: rgb(252, 211, 77); /* Yellow */
-            --connection-red: rgb(248, 113, 113); /* Red */
+                /* Connection Colors */
+                --connection-green: rgb(34, 197, 94); /* Green for Good */
+                --connection-yellow: rgb(252, 211, 77); /* Yellow for Medium */
+                --connection-red: rgb(248, 113, 113); /* Red for Poor */
+
+                /* General Shadows */
+                --general-light-shadow: rgba(0, 0, 0, 0.15); /* Subtle dark shadow for light mode */
+
+                /* Connection Shadows */
+                --connection-none-shadow: rgba(0, 0, 0, 0.15); /* Slightly visible shadow for neutral connections */
 }
 
+        /* Adjusted Drop Shadows for Dark Mode */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #1b2838;
                 --text-color: #ffffff;
-                --border-color: rgba(255, 255, 255, 0.1);
-                --secondary-text: #999999;
-                --card-bg: rgb(41, 44, 51);  /* Dark mode header boxes */
+                --border-color: rgba(255, 255, 255, 0.2); /* Slightly brighter for better separation */
+                --secondary-text: #cccccc;
+                --card-bg: rgb(45, 50, 60); /* Slightly lighter header boxes for contrast */
+
+                /* Connection Shadows */
+                --connection-none-shadow: rgba(255, 255, 255, 0.1); /* Brightened white shadow for better visibility */
+
+                /* Lighter shadow for all non-connection elements */
+                --general-light-shadow: rgba(255, 255, 255, 0.1); /* Subtle white glow */
+            }
+
+            /* Connection Status Drop Shadows in Dark Mode */
+            .connection-none {
+                box-shadow: 0px 4px 12px var(--connection-none-shadow); /* Increased opacity and spread */
             }
         }
 
@@ -59,10 +77,12 @@
 
         /* Station Name Box */
         .station-box {
-            background: var(--card-bg);
             padding: 16px;
-            border-radius: 12px;
+            border-radius: 8px;
             text-align: center;
+            border: 0px solid var(--border-color); /* Add border */
+            background: none; /* Remove background color */
+            font-weight: bold;
         }
 
         .station-name {
@@ -84,13 +104,20 @@
             }
         }
 
-        /* Info Boxes */
+        /* Info Box Styles */
         .info-box {
             flex: 1;
-            background: var(--card-bg);
             padding: 16px;
-            border-radius: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             text-align: center;
+            border: 0px solid var(--border-color); /* Add solid border */
+            background: none; /* Remove background color */
+            box-shadow: 0px 4px 12px var(--general-light-shadow);
         }
 
         /* Time/Date Box */
@@ -103,8 +130,9 @@
         .date {
             color: var(--secondary-text);
             font-size: 1rem;
+            margin-bottom: 4px;
         }
-
+        
         /* Weather Box */
         .weather-info {
             display: flex;
@@ -119,8 +147,9 @@
         }
 
         .weather-icon {
-            width: 32px;
-            height: 32px;
+            width: 3rem;
+            height: 3rem;
+            filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.5)); /* Add shadow */
         }
 
         .weather-forecast {
@@ -136,9 +165,9 @@
             gap: 20px;
             align-items: center;
             padding: 16px;
-            border: 1px solid;
+            border: none;
             border-radius: 10px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             margin-bottom: 12px;
         }
 
@@ -170,11 +199,22 @@
         .minutes.approaching { color: var(--connection-yellow); }
         .minutes.normal { color: var(--connection-green); }
 
-        /* Connection Status */
-        .connection-good {border-color: rgba(34, 197, 94, 0.3); /* Green with 30% opacity */}
-        .connection-medium {border-color: rgba(252, 211, 77, 0.3); /* Yellow with 30% opacity */}
-        .connection-poor {border-color: rgba(248, 113, 113, 0.25); /* Red with 25% opacity */}
-        .connection-none {border-color: rgba(229, 231, 235, 0.2); /* Light gray with 20% opacity */}
+        /* Connection Status with Drop Shadow */
+        .connection-good {
+            box-shadow: 0px 4px 8px rgba(34, 197, 94, 0.5); /* Green shadow */
+        }
+
+        .connection-medium {
+            box-shadow: 0px 4px 8px rgba(252, 211, 77, 0.5); /* Yellow shadow */
+        }
+
+        .connection-poor {
+            box-shadow: 0px 4px 8px rgba(248, 113, 113, 0.5); /* Red shadow */
+        }
+
+        .connection-none {
+            box-shadow: 0px 4px 12px var(--general-light-shadow);
+        }
 
         /* Section Headers */
         .direction-header {

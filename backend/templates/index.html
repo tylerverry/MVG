@@ -5,16 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MVG Transport Display</title>
     <style>
+        /* Root Variables */
         :root {
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --secondary-text: #666666;
-            --line-box-color: #3b82f6;
-            --connection-green: #22c55e;
-            --connection-yellow: #fde047;
-            --connection-red: #ef4444;
-        }
+            /* General Colors */
+            --bg-color: rgb(255, 255, 255);
+            --text-color: rgb(0, 0, 0);
+            --border-color: rgb(229, 231, 235); /* Light gray */
+            --secondary-text: rgb(107, 114, 128);
+
+            /* Accent Colors */
+            --line-box-color: rgb(59, 130, 246); /* Blue */
+            --card-bg: rgb(247, 249, 253);  /* Light mode header boxes */
+
+            /* Connection Colors */
+            --connection-green: rgb(34, 197, 94); /* Green */
+            --connection-yellow: rgb(252, 211, 77); /* Yellow */
+            --connection-red: rgb(248, 113, 113); /* Red */
+}
 
         @media (prefers-color-scheme: dark) {
             :root {
@@ -22,9 +29,11 @@
                 --text-color: #ffffff;
                 --border-color: rgba(255, 255, 255, 0.1);
                 --secondary-text: #999999;
+                --card-bg: rgb(41, 44, 51);  /* Dark mode header boxes */
             }
         }
 
+        /* Base Styles */
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -36,57 +45,91 @@
 
         .container {
             width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
-        @media (orientation: landscape) {
-            .container {
-                width: 90%;
-            }
+        /* Header Layout */
+        .header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 32px;
         }
 
-        .header {
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
+        /* Station Name Box */
+        .station-box {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
         }
 
         .station-name {
-            font-size: 1.75rem;
+            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin: 0;
         }
 
+        /* Info Row Layout */
+        .info-row {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .info-row {
+                flex-direction: column;
+            }
+        }
+
+        /* Info Boxes */
+        .info-box {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        /* Time/Date Box */
+        .datetime {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .date {
+            color: var(--secondary-text);
+            font-size: 1rem;
+        }
+
+        /* Weather Box */
         .weather-info {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            color: var(--secondary-text);
-            font-size: 1.25rem;
-            margin: 12px 0;
-        }
-
-        .weather-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            vertical-align: middle;
         }
 
         .weather-temp {
+            font-size: 1.5rem;
             font-weight: bold;
-            color: var(--text-color);
         }
 
-        .direction-header {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 20px 0 10px 0;
+        .weather-icon {
+            width: 32px;
+            height: 32px;
         }
 
-        .departures > * + * {
-            margin-top: 12px;
+        .weather-forecast {
+            color: var(--secondary-text);
+            font-size: 1rem;
+            margin-top: 4px;
         }
 
+        /* Departure Cards */
         .departure-card {
             display: grid;
             grid-template-columns: 60px 1fr auto;
@@ -96,6 +139,7 @@
             border: 1px solid;
             border-radius: 10px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 12px;
         }
 
         .line-number {
@@ -126,56 +170,50 @@
         .minutes.approaching { color: var(--connection-yellow); }
         .minutes.normal { color: var(--connection-green); }
 
+        /* Connection Status */
+        .connection-good {border-color: rgba(34, 197, 94, 0.3); /* Green with 30% opacity */}
+        .connection-medium {border-color: rgba(252, 211, 77, 0.3); /* Yellow with 30% opacity */}
+        .connection-poor {border-color: rgba(248, 113, 113, 0.25); /* Red with 25% opacity */}
+        .connection-none {border-color: rgba(229, 231, 235, 0.2); /* Light gray with 20% opacity */}
+
+        /* Section Headers */
+        .direction-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+        }
+
+        /* Update Status */
         .last-updated {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            opacity: 0.8;
             text-align: center;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            margin-top: 20px;
         }
 
         .stale {
             color: var(--connection-red);
-        }
-
-        .connection-good {
-            border-color: var(--connection-green);
-            border-opacity: 0.2;
-        }
-
-        .connection-medium {
-            border-color: var(--connection-yellow);
-            border-opacity: 0.2;
-        }
-
-        .connection-poor {
-            border-color: var(--connection-red);
-            border-opacity: 0.2;
-        }
-
-        .connection-none {
-            border-color: var(--border-color);
-            border-opacity: 0.25;
-        }
-
-        .datetime {
-            color: var(--secondary-text);
-            font-size: 1.25rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="station-name">
-                Prinz-Eugen-Park
+            <div class="station-box">
+                <h1 class="station-name">PRINZ-EUGEN-PARK</h1>
             </div>
-            <div class="datetime">
-                <!-- Time will be inserted here -->
-            </div>
-            <div class="weather-info">
-                <span class="weather-temp">--°C</span>
-                <img class="weather-icon" src="" alt="Weather" />
-                <span>(↑--° ↓--°)</span>
+            <div class="info-row">
+                <div class="info-box">
+                    <div class="datetime"></div>
+                    <div class="date"></div>
+                </div>
+                <div class="info-box">
+                    <div class="weather-info">
+                        <span class="weather-temp">--°C</span>
+                        <img class="weather-icon" src="" alt="Weather" />
+                    </div>
+                    <div class="weather-forecast">(↑--° ↓--°)</div>
+                </div>
             </div>
         </div>
 
@@ -201,7 +239,9 @@
                 day: 'numeric',
                 month: 'long'
             });
-            return `${time} ${weekday}, ${date}`;
+            
+            document.querySelector('.datetime').textContent = time;
+            document.querySelector('.date').textContent = `${weekday}, ${date}`;
         }
 
         function getConnectionClass(connection) {
@@ -222,14 +262,14 @@
 
             if (weather) {
                 document.querySelector('.weather-temp').textContent = `${weather.temp}°C`;
-                document.querySelector('.weather-info > span:last-child').textContent = 
+                document.querySelector('.weather-forecast').textContent = 
                     `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
                 const weatherIcon = document.querySelector('.weather-icon');
                 weatherIcon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
                 weatherIcon.alt = weather.description;
             }
 
-            document.querySelector('.datetime').textContent = formatDateTime();
+            formatDateTime();
 
             content.innerHTML = `
                 <div class="direction-group">
@@ -275,12 +315,10 @@
             }
         }
 
-        // Update time display every second
         setInterval(() => {
-            document.querySelector('.datetime').textContent = formatDateTime();
+            formatDateTime();
         }, 1000);
 
-        // Update last updated counter
         setInterval(() => {
             if (!refreshTime) return;
             const now = Math.floor(Date.now() / 1000);
@@ -290,7 +328,6 @@
             lastUpdated.classList.toggle('stale', seconds > 45);
         }, 1000);
 
-        // Initial fetch and regular updates
         fetchData();
         setInterval(fetchData, 15000);
     </script>

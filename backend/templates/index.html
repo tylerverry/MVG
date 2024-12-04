@@ -12,7 +12,7 @@
             --secondary-text: #666666;
             --line-box-color: #3b82f6;
             --connection-green: #22c55e;
-            --connection-yellow: #eab308;
+            --connection-yellow: #fde047;
             --connection-red: #ef4444;
         }
 
@@ -52,36 +52,29 @@
         }
 
         .station-name {
-            font-size: 28px;
+            font-size: 1.75rem;
             font-weight: bold;
             margin-bottom: 5px;
         }
 
-        .header-info {
+        .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: var(--secondary-text);
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-            white-space: nowrap;
-        }
-
-        .weather-info, .temp-range, .datetime {
-            display: flex;
-            align-items: center;
+            font-size: 1.25rem;
+            margin: 12px 0;
         }
 
         .weather-icon {
-            width: 24px;
-            height: 24px;
+            width: 2.5rem;
+            height: 2.5rem;
             vertical-align: middle;
         }
 
-        .temp, .temp-range {
-            padding: 0 4px;
-        }
-
-        .divider {
-            padding: 0 12px;
+        .weather-temp {
+            font-weight: bold;
+            color: var(--text-color);
         }
 
         .direction-header {
@@ -90,15 +83,19 @@
             margin: 20px 0 10px 0;
         }
 
-        .departure {
+        .departures > * + * {
+            margin-top: 12px;
+        }
+
+        .departure-card {
             display: grid;
             grid-template-columns: 60px 1fr auto;
             gap: 20px;
             align-items: center;
-            padding: 15px;
-            margin: 10px 0;
-            border: 1px solid var(--border-color);
+            padding: 16px;
+            border: 1px solid;
             border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .line-number {
@@ -116,25 +113,13 @@
 
         .destination {
             font-size: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-weight: 500;
         }
-
-        .connection-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .connection-good { background-color: var(--connection-green); }
-        .connection-medium { background-color: var(--connection-yellow); }
-        .connection-poor { background-color: var(--connection-red); }
 
         .minutes {
             font-size: 32px;
             font-weight: bold;
+            text-align: right;
         }
 
         .minutes.soon { color: var(--connection-red); }
@@ -151,6 +136,31 @@
         .stale {
             color: var(--connection-red);
         }
+
+        .connection-good {
+            border-color: var(--connection-green);
+            border-opacity: 0.2;
+        }
+
+        .connection-medium {
+            border-color: var(--connection-yellow);
+            border-opacity: 0.2;
+        }
+
+        .connection-poor {
+            border-color: var(--connection-red);
+            border-opacity: 0.2;
+        }
+
+        .connection-none {
+            border-color: var(--border-color);
+            border-opacity: 0.25;
+        }
+
+        .datetime {
+            color: var(--secondary-text);
+            font-size: 1.25rem;
+        }
     </style>
 </head>
 <body>
@@ -159,15 +169,13 @@
             <div class="station-name">
                 Prinz-Eugen-Park
             </div>
-            <div class="header-info">
-                <div class="weather-info">
-                    <img class="weather-icon" src="" alt="Weather">
-                    <span class="temp"></span>
-                </div>
-                <span class="divider">•</span>
-                <div class="temp-range"></div>
-                <span class="divider">•</span>
-                <div class="datetime"></div>
+            <div class="datetime">
+                <!-- Time will be inserted here -->
+            </div>
+            <div class="weather-info">
+                <span class="weather-temp">--°C</span>
+                <img class="weather-icon" src="" alt="Weather" />
+                <span>(↑--° ↓--°)</span>
             </div>
         </div>
 
@@ -193,14 +201,15 @@
                 day: 'numeric',
                 month: 'long'
             });
-            return `${time}  •  ${weekday}  •  ${date}`;
+            return `${time} ${weekday}, ${date}`;
         }
 
         function getConnectionClass(connection) {
-            return connection ? `connection-${connection.status}` : '';
+            if (!connection) return 'connection-none';
+            return `connection-${connection.status}`;
         }
 
-        function getMinutesClass(minutes) {
+        function getMinuteColor(minutes) {
             if (minutes <= (WALKING_TIME - 1)) return 'soon';
             if (minutes <= (WALKING_TIME + 1)) return 'approaching';
             if (minutes <= (WALKING_TIME + 3)) return 'normal';
@@ -212,41 +221,41 @@
             const { trams, weather } = data;
 
             if (weather) {
+                document.querySelector('.weather-temp').textContent = `${weather.temp}°C`;
+                document.querySelector('.weather-info > span:last-child').textContent = 
+                    `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
                 const weatherIcon = document.querySelector('.weather-icon');
                 weatherIcon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
                 weatherIcon.alt = weather.description;
-                
-                document.querySelector('.temp').textContent = `${weather.temp}°C`;
-                document.querySelector('.temp-range').textContent = 
-                    `↑${weather.temp_max}° ↓${weather.temp_min}°`;
             }
 
             document.querySelector('.datetime').textContent = formatDateTime();
 
             content.innerHTML = `
                 <div class="direction-group">
-                    <div class="direction-header">Nordwärts</div>
-                    ${trams.northbound.map(tram => `
-                        <div class="departure">
-                            <div class="line-number">${tram.line}</div>
-                            <div class="destination">
-                                ${tram.destination}
-                                <div class="connection-indicator ${getConnectionClass(tram.connection)}"></div>
+                    <h2 class="direction-header">Nordwärts</h2>
+                    <div class="departures">
+                        ${trams.northbound.map(tram => `
+                            <div class="departure-card ${getConnectionClass(tram.connection)}">
+                                <div class="line-number">${tram.line}</div>
+                                <div class="destination">${tram.destination}</div>
+                                <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
                             </div>
-                            <div class="minutes ${getMinutesClass(tram.minutes)}">${tram.minutes}</div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
 
                 <div class="direction-group">
-                    <div class="direction-header">Südwärts</div>
-                    ${trams.southbound.map(tram => `
-                        <div class="departure">
-                            <div class="line-number">${tram.line}</div>
-                            <div class="destination">${tram.destination}</div>
-                            <div class="minutes ${getMinutesClass(tram.minutes)}">${tram.minutes}</div>
-                        </div>
-                    `).join('')}
+                    <h2 class="direction-header">Südwärts</h2>
+                    <div class="departures">
+                        ${trams.southbound.map(tram => `
+                            <div class="departure-card ${getConnectionClass(tram.connection)}">
+                                <div class="line-number">${tram.line}</div>
+                                <div class="destination">${tram.destination}</div>
+                                <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `;
 
@@ -266,10 +275,12 @@
             }
         }
 
+        // Update time display every second
         setInterval(() => {
             document.querySelector('.datetime').textContent = formatDateTime();
         }, 1000);
 
+        // Update last updated counter
         setInterval(() => {
             if (!refreshTime) return;
             const now = Math.floor(Date.now() / 1000);
@@ -279,6 +290,7 @@
             lastUpdated.classList.toggle('stale', seconds > 45);
         }, 1000);
 
+        // Initial fetch and regular updates
         fetchData();
         setInterval(fetchData, 15000);
     </script>

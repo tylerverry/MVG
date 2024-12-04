@@ -1,5 +1,6 @@
-flask
+Flask
 flask-cors
-mvg
 requests
 python-dateutil
+python-dotenv
+mvg

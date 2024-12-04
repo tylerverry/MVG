@@ -4,7 +4,11 @@ from datetime import datetime, timedelta
 import logging
 import sys
 from pathlib import Path
-import requests
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add the parent directory to sys.path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -35,55 +39,18 @@ def add_cache_headers(response, max_age=15):
 @app.route('/')
 def home():
     response = make_response(render_template('index.html'))
-    return add_cache_headers(response, max_age=3600)
+    return add_cache_headers(response, max_age=3600)  # Cache HTML for 1 hour
 
-@app.route('/api/weather/debug')
-def weather_debug():
-    try:
-        # Try current weather first
-        current = requests.get(
-            "https://api.openweathermap.org/data/2.5/weather",
-            params={
-                "lat": "48.16381",
-                "lon": "11.63320",
-                "appid": "535155cbe44494b5bb60c08cfe379f60",
-                "units": "metric"
-            },
-            timeout=5
-        )
-        current.raise_for_status()
-
-        # Then try forecast
-        forecast = requests.get(
-            "https://api.openweathermap.org/data/2.5/forecast",
-            params={
-                "lat": "48.16381",
-                "lon": "11.63320",
-                "appid": "535155cbe44494b5bb60c08cfe379f60",
-                "units": "metric"
-            },
-            timeout=5
-        )
-        forecast.raise_for_status()
-        
-        return jsonify({
-            "current_weather": current.json(),
-            "forecast": forecast.json(),
-            "weather_service": weather_service.get_weather()
-        })
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "type": type(e).__name__
-        }), 500
-    
 @app.route('/api/data')
 def get_combined_data():
+    """Get all transport data including connections and weather"""
     try:
+        # Get base data
         trams = get_tram_departures()
         buses = get_bus_departures()
         weather = weather_service.get_weather()
         
+        # Calculate connections and update northbound trams
         trams['northbound'] = calculate_connections(
             northbound_trams=trams['northbound'],
             buses=buses
@@ -100,6 +67,18 @@ def get_combined_data():
     except Exception as e:
         logger.error(f"Error in combined data endpoint: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/weather/debug')
+def weather_debug():
+    """Debug endpoint for weather service"""
+    try:
+        return jsonify({
+            "current_weather": weather_service.get_weather(),
+            "cache_time": weather_service.cache_time.isoformat() if weather_service.cache_time else None,
+            "cache_valid": weather_service._is_cache_valid()
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

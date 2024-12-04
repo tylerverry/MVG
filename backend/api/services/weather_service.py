@@ -1,12 +1,16 @@
 import requests
 from datetime import datetime, timedelta
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 class WeatherService:
     def __init__(self):
-        self.API_KEY = "535155cbe44494b5bb60c08cfe379f60"
+        self.API_KEY = os.getenv('OPENWEATHER_API_KEY', "535155cbe44494b5bb60c08cfe379f60")
         self.LAT = "48.16381"
         self.LON = "11.63320"
         self.cache = None

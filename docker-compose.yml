@@ -1,25 +1,20 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  tram-service:
+  app:
     build:
       context: .
-    container_name: tram-service
-    command: ["python", "/app/backend/tram_times.py"]
+      dockerfile: Dockerfile
+    container_name: mvg
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app
     ports:
       - "5000:5000"
-    networks:
-      - app-network
-
-  bus-service:
-    build:
-      context: .
-    container_name: bus-service
-    command: ["python", "/app/backend/bus_times.py"]
-    ports:
-      - "5001:5001"
+    command: ["python", "-m", "backend.api.main"]
     networks:
       - app-network
 
 networks:
   app-network:
+    driver: bridge

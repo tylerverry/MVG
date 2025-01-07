@@ -7,39 +7,39 @@
     <style>
         /* Root Variables */
         :root {
-                /* General Colors */
-                --bg-color: rgb(245, 245, 245); /* Main Background */
-                --text-color: rgb(0, 0, 0); /* Primary Text */
-                --border-color: rgb(200, 200, 200); /* General Border */
-                --secondary-text: rgb(100, 100, 100); /* Secondary Text */
+            /* General Colors */
+            --bg-color: #f3f4f2; /* Sage green background */
+            --text-color: #2f4f4f; /* Dark slate gray for primary text */
+            --border-color: #b0c4b1; /* Soft green for borders */
+            --secondary-text: #6b8e23; /* Olive green for secondary text */
 
-                /* Accent Colors */
-                --line-box-color: rgb(59, 130, 246); /* Bright Blue */
-                --card-bg: rgb(240, 248, 255); /* Light Header Boxes (Light Blue Tint) */
+            /* Accent Colors */
+            --line-box-color: #7c9a7b; /* Muted sage for line boxes */
+            --card-bg: #e6e9e5; /* Light greenish for header boxes */
 
-                /* Connection Colors */
-                --connection-green: rgb(34, 197, 94); /* Green for Good */
-                --connection-yellow: rgb(252, 211, 77); /* Yellow for Medium */
-                --connection-red: rgb(248, 113, 113); /* Red for Poor */
+            /* Connection Colors */
+            --connection-green: #6aa84f; /* Sage green for good connection */
+            --connection-yellow: #d1b05c; /* Soft gold for medium connection */
+            --connection-red: #cc6666; /* Muted red for poor connection */
 
-                /* General Shadows */
-                --general-light-shadow: rgba(0, 0, 0, 0.15); /* Subtle dark shadow for light mode */
+            /* General Shadows */
+            --general-light-shadow: rgba(0, 0, 0, 0.15); /* Subtle shadow */
 
-                /* Connection Shadows */
-                --connection-none-shadow: rgba(0, 0, 0, 0.15); /* Slightly visible shadow for neutral connections */
-}
+            /* Connection Shadows */
+            --connection-none-shadow: rgba(0, 0, 0, 0.15); /* Neutral shadow */
+        }
 
         /* Adjusted Drop Shadows for Dark Mode */
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #1b2838;
-                --text-color: #ffffff;
-                --border-color: rgba(255, 255, 255, 0.2); /* Slightly brighter for better separation */
-                --secondary-text: #cccccc;
-                --card-bg: rgb(45, 50, 60); /* Slightly lighter header boxes for contrast */
+                --bg-color: #2f4f4f; /* Dark sage green background */
+                --text-color: #e0f2e0; /* Light sage green for text */
+                --border-color: #6b8e23; /* Olive green for borders */
+                --secondary-text: #98fb98; /* Pale green for secondary text */
+                --card-bg: #4b6b4b; /* Dark muted green for header boxes */
 
                 /* Connection Shadows */
-                --connection-none-shadow: rgba(255, 255, 255, 0.1); /* Brightened white shadow for better visibility */
+                --connection-none-shadow: rgba(255, 255, 255, 0.1); /* Brightened white shadow */
 
                 /* Lighter shadow for all non-connection elements */
                 --general-light-shadow: rgba(255, 255, 255, 0.1); /* Subtle white glow */

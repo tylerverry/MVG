@@ -4,161 +4,212 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MVG Transport Display</title>
+    <!-- Google Font (Nunito Sans) -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link 
+        href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" 
+        rel="stylesheet"
+    >
     <style>
-        /* Root Variables */
+        /* 
+           ------------------------------------------------
+           Root Variables 
+           ------------------------------------------------
+           Keeping your sage-inspired palette in both 
+           light & dark modes, with subtle tweaks/animation.
+        */
         :root {
             /* General Colors */
-            --bg-color: #f3f4f2; /* Sage green background */
-            --text-color: #2f4f4f; /* Dark slate gray for primary text */
-            --border-color: #b0c4b1; /* Soft green for borders */
-            --secondary-text: #6b8e23; /* Olive green for secondary text */
+            --bg-color: #f3f4f2;              /* Sage (light mode) background */
+            --text-color: #2f4f4f;            /* Dark slate gray for text */
+            --border-color: #b0c4b1;          /* Soft green for borders */
+            --secondary-text: #6b8e23;        /* Olive green for secondary text */
 
             /* Accent Colors */
-            --line-box-color: #7c9a7b; /* Muted sage for line boxes */
-            --card-bg: #e6e9e5; /* Light greenish for header boxes */
+            --line-box-color: #7c9a7b;        /* Muted sage for line boxes */
+            --card-bg: #e6e9e5;               /* Light greenish for header boxes */
 
             /* Connection Colors */
-            --connection-green: #6aa84f; /* Sage green for good connection */
-            --connection-yellow: #d1b05c; /* Soft gold for medium connection */
-            --connection-red: #cc6666; /* Muted red for poor connection */
+            --connection-green: #6aa84f;      /* Sage green for good connection */
+            --connection-yellow: #d1b05c;     /* Soft gold for medium connection */
+            --connection-red: #cc6666;        /* Muted red for poor connection */
 
             /* General Shadows */
             --general-light-shadow: rgba(0, 0, 0, 0.15); /* Subtle shadow */
 
             /* Connection Shadows */
             --connection-none-shadow: rgba(0, 0, 0, 0.15); /* Neutral shadow */
+
+            /* Transition Duration */
+            --transition-duration: 0.3s;
         }
 
-        /* Adjusted Drop Shadows for Dark Mode */
+        /* 
+           ------------------------------------------------
+           Dark Mode Overrides
+           ------------------------------------------------
+        */
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #2f4f4f; /* Dark sage green background */
-                --text-color: #e0f2e0; /* Light sage green for text */
-                --border-color: #6b8e23; /* Olive green for borders */
-                --secondary-text: #98fb98; /* Pale green for secondary text */
-                --card-bg: #4b6b4b; /* Dark muted green for header boxes */
+                --bg-color: #2f4f4f;                 /* Dark sage green background */
+                --text-color: #e0f2e0;               /* Light sage green for text */
+                --border-color: #6b8e23;             /* Olive green for borders */
+                --secondary-text: #98fb98;           /* Pale green for secondary text */
+                --card-bg: #4b6b4b;                  /* Dark muted green for header boxes */
 
-                /* Connection Shadows */
+                /* Shadows in Dark Mode */
                 --connection-none-shadow: rgba(255, 255, 255, 0.1); /* Brightened white shadow */
-
-                /* Lighter shadow for all non-connection elements */
-                --general-light-shadow: rgba(255, 255, 255, 0.1); /* Subtle white glow */
+                --general-light-shadow: rgba(255, 255, 255, 0.1);   /* Subtle white glow */
             }
-
-            /* Connection Status Drop Shadows in Dark Mode */
+            
+            /* Adjust connection drop shadows in dark mode */
             .connection-none {
-                box-shadow: 0px 4px 12px var(--connection-none-shadow); /* Increased opacity and spread */
+                box-shadow: 0px 4px 12px var(--connection-none-shadow);
             }
         }
 
-        /* Base Styles */
+        /* 
+           ------------------------------------------------
+           Global Base Styles
+           ------------------------------------------------
+        */
+        * {
+            box-sizing: border-box;
+        }
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             margin: 0;
             padding: 20px;
             line-height: 1.5;
+            transition: background-color var(--transition-duration) ease,
+                        color var(--transition-duration) ease;
         }
-
         .container {
-            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
         }
 
-        /* Header Layout */
+        /* 
+           ------------------------------------------------
+           Header + Station Name
+           ------------------------------------------------
+        */
         .header {
             display: flex;
             flex-direction: column;
             gap: 16px;
             margin-bottom: 32px;
         }
-
-        /* Station Name Box */
         .station-box {
             padding: 16px;
             border-radius: 8px;
             text-align: center;
-            border: 0px solid var(--border-color); /* Add border */
-            background: none; /* Remove background color */
-            font-weight: bold;
+            background: linear-gradient(
+                135deg, 
+                var(--card-bg) 0%, 
+                rgba(255,255,255,0) 100%
+            );
+            box-shadow: 0 2px 6px var(--general-light-shadow);
+            transition: background var(--transition-duration) ease,
+                        box-shadow var(--transition-duration) ease;
         }
-
         .station-name {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 2rem;
+            font-weight: 700;
             margin: 0;
+            letter-spacing: 1px;
         }
 
-        /* Info Row Layout */
+        /*
+           ------------------------------------------------
+           Info Row (Date/Time + Weather)
+           ------------------------------------------------
+        */
         .info-row {
             display: flex;
             gap: 16px;
             width: 100%;
         }
-
         @media (max-width: 600px) {
             .info-row {
                 flex-direction: column;
             }
         }
 
-        /* Info Box Styles */
         .info-box {
             flex: 1;
             padding: 16px;
             border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
             text-align: center;
-            border: 0px solid var(--border-color); /* Add solid border */
-            background: none; /* Remove background color */
+            background: linear-gradient(
+                135deg,
+                var(--card-bg) 0%,
+                rgba(255,255,255,0) 100%
+            );
             box-shadow: 0px 4px 12px var(--general-light-shadow);
+            transition: background var(--transition-duration) ease,
+                        box-shadow var(--transition-duration) ease;
         }
 
-        /* Time/Date Box */
         .datetime {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.6rem;
+            font-weight: 700;
             margin-bottom: 4px;
         }
-
         .date {
             color: var(--secondary-text);
             font-size: 1rem;
             margin-bottom: 4px;
+            font-weight: 600;
         }
-        
-        /* Weather Box */
+
         .weather-info {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-
         .weather-temp {
             font-size: 1.5rem;
-            font-weight: bold;
+            font-weight: 700;
         }
-
         .weather-icon {
             width: 3rem;
             height: 3rem;
-            filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.5)); /* Add shadow */
+            filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.4));
+            transition: transform var(--transition-duration) ease;
         }
-
+        .weather-icon:hover {
+            transform: scale(1.1);
+        }
         .weather-forecast {
             color: var(--secondary-text);
             font-size: 1rem;
             margin-top: 4px;
+            font-weight: 600;
         }
 
-        /* Departure Cards */
+        /* 
+           ------------------------------------------------
+           Departures Section
+           ------------------------------------------------
+        */
+        .direction-group {
+            margin-bottom: 20px;
+        }
+        .direction-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 20px 0 10px 0;
+            letter-spacing: 0.5px;
+        }
+        .departures {
+            display: flex;
+            flex-direction: column;
+        }
+
         .departure-card {
             display: grid;
             grid-template-columns: 60px 1fr auto;
@@ -167,13 +218,33 @@
             padding: 16px;
             border: none;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background: #fff; /* White base behind items (light mode) */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             margin-bottom: 12px;
+            transition: transform var(--transition-duration) ease,
+                        box-shadow var(--transition-duration) ease,
+                        background-color var(--transition-duration) ease;
+        }
+        .departure-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px var(--general-light-shadow);
+        }
+
+        /* 
+           In dark mode, the default background 
+           for these cards will come from 
+           .departure-card's parent's color. 
+           We'll override it in the code below if needed.
+        */
+        @media (prefers-color-scheme: dark) {
+            .departure-card {
+                background: #2f4f4f;
+            }
         }
 
         .line-number {
             background-color: var(--line-box-color);
-            color: white;
+            color: #fff;
             width: 60px;
             height: 60px;
             border-radius: 10px;
@@ -181,56 +252,63 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .destination {
-            font-size: 20px;
-            font-weight: 500;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         .minutes {
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 2rem;
+            font-weight: 700;
             text-align: right;
         }
 
-        .minutes.soon { color: var(--connection-red); }
-        .minutes.approaching { color: var(--connection-yellow); }
-        .minutes.normal { color: var(--connection-green); }
+        /* 
+           ------------------------------------------------
+           Connection Status Coloring
+           ------------------------------------------------
+        */
+        .minutes.soon { 
+            color: var(--connection-red);       /* Tram arriving very soon */
+        }
+        .minutes.approaching { 
+            color: var(--connection-yellow);    /* Tram within a close window */
+        }
+        .minutes.normal { 
+            color: var(--connection-green);     /* Tram comfortably away */
+        }
 
-        /* Connection Status with Drop Shadow */
+        /* 
+           Connection-based Drop Shadows
+           (Optional addition for an extra highlight)
+        */
         .connection-good {
-            box-shadow: 0px 4px 8px rgba(34, 197, 94, 0.5); /* Green shadow */
+            box-shadow: 0px 4px 8px rgba(34, 197, 94, 0.4); /* Subtle green glow */
         }
-
         .connection-medium {
-            box-shadow: 0px 4px 8px rgba(252, 211, 77, 0.5); /* Yellow shadow */
+            box-shadow: 0px 4px 8px rgba(252, 211, 77, 0.4); /* Subtle yellow glow */
         }
-
         .connection-poor {
-            box-shadow: 0px 4px 8px rgba(248, 113, 113, 0.5); /* Red shadow */
+            box-shadow: 0px 4px 8px rgba(248, 113, 113, 0.4); /* Subtle red glow */
         }
-
         .connection-none {
             box-shadow: 0px 4px 12px var(--general-light-shadow);
         }
 
-        /* Section Headers */
-        .direction-header {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 20px 0 10px 0;
-        }
-
-        /* Update Status */
+        /* 
+           ------------------------------------------------
+           Last Updated
+           ------------------------------------------------
+        */
         .last-updated {
             text-align: center;
             color: var(--secondary-text);
             font-size: 0.9rem;
             margin-top: 20px;
         }
-
         .stale {
             color: var(--connection-red);
         }
@@ -238,6 +316,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- HEADER -->
         <div class="header">
             <div class="station-box">
                 <h1 class="station-name">PRINZ-EUGEN-PARK</h1>
@@ -257,11 +336,19 @@
             </div>
         </div>
 
+        <!-- CONTENT (Trams) -->
         <div id="content">Lädt...</div>
 
+        <!-- LAST UPDATED -->
         <div class="last-updated"></div>
     </div>
 
+    <!-- 
+        ------------------------------------------------
+        JavaScript 
+        - Retaining your logic for fetching + updating
+        ------------------------------------------------
+    -->
     <script>
         let refreshTime = null;
         const WALKING_TIME = 6;
@@ -355,10 +442,12 @@
             }
         }
 
+        // Update Time/Date every second
         setInterval(() => {
             formatDateTime();
         }, 1000);
 
+        // Update "Last Updated" timer every second
         setInterval(() => {
             if (!refreshTime) return;
             const now = Math.floor(Date.now() / 1000);
@@ -368,6 +457,7 @@
             lastUpdated.classList.toggle('stale', seconds > 45);
         }, 1000);
 
+        // Initial Data Fetch + Re-fetch every 15s
         fetchData();
         setInterval(fetchData, 15000);
     </script>

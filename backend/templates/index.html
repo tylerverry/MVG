@@ -95,11 +95,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center; /* Centers everything vertically */
+      gap: 0.5rem; /* Adjusts spacing between elements */
       padding: 1rem;
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
       border: var(--card-border);
+      min-width: 120px; /* Ensures consistent width across all blocks */
+      text-align: center; /* Ensures text alignment is consistent */
     }
 
     .info-label {
@@ -116,6 +119,20 @@
     .info-secondary {
       font-size: 1rem;
       color: var(--text-secondary);
+    }
+
+    .weather-icon {
+      width: 72px; /* Adjust size if needed */
+      height: 72px;
+      margin-top: -1.2rem;
+      margin-bottom: -1.2rem;
+    }
+
+    .weather-description {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      text-align: center;
+      text-transform: capitalize; /* Capitalizes each word */
     }
 
     /* Enhanced departure cards */
@@ -231,8 +248,10 @@
 
     @media (max-width: 768px) {
       .header-info {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Stacks the blocks vertically */
+        gap: 1rem;
       }
+    }
 
       .departure-card {
         grid-template-columns: 8px 60px 1fr 80px;
@@ -275,7 +294,8 @@
         </div>
         <div class="info-block">
           <span class="info-label">Wetter</span>
-          <img class="weather-icon" src="" alt="Wetter" style="width: 60px; height: 60px;"/>
+          <img class="weather-icon" src="" alt="Wetter" />
+          <span class="weather-description">--</span>
         </div>
       </div>
     </div>
@@ -409,11 +429,27 @@
     // Weather
     function updateWeather(weather) {
       if (!weather) return;
-      qsel('.weather-temp').textContent = `${weather.temp}°C`;
-      qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
+
+      qsel('.weather-temp').textContent = `${weather.main.temp}°C`;
+      qsel('.weather-forecast').textContent = `(↑${weather.main.temp_max}° ↓${weather.main.temp_min}°)`;
+
       const icon = qsel('.weather-icon');
-      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description || 'Wetter';
+      icon.src = `https://openweathermap.org/img/wn/${weather.weather[0].icon}.png`;
+      icon.alt = weather.weather[0].description;
+
+      qsel('.weather-description').textContent = capitalizeWords(weather.weather[0].description);
+    }
+
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, char => char.toUpperCase());
+}
+
+    function capitalizeWords(str) {
+      return str.replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function capitalizeWords(str) {
+      return str.replace(/\b\w/g, char => char.toUpperCase());
     }
 
     // Connection / minute helpers

@@ -11,12 +11,10 @@
         rel="stylesheet"
     >
     <style>
-        /* 
-           ------------------------------------------------
-           Root Variables 
-           ------------------------------------------------
-           Keeping your sage-inspired palette in both 
-           light & dark modes, with subtle tweaks/animation.
+        /*
+            ------------------------------------------------
+            Root Variables
+            ------------------------------------------------
         */
         :root {
             /* General Colors */
@@ -44,10 +42,10 @@
             --transition-duration: 0.3s;
         }
 
-        /* 
-           ------------------------------------------------
-           Dark Mode Overrides
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Dark Mode Overrides
+            ------------------------------------------------
         */
         @media (prefers-color-scheme: dark) {
             :root {
@@ -58,20 +56,20 @@
                 --card-bg: #4b6b4b;                  /* Dark muted green for header boxes */
 
                 /* Shadows in Dark Mode */
-                --connection-none-shadow: rgba(255, 255, 255, 0.1); /* Brightened white shadow */
-                --general-light-shadow: rgba(255, 255, 255, 0.1);   /* Subtle white glow */
+                --connection-none-shadow: rgba(255, 255, 255, 0.1);
+                --general-light-shadow: rgba(255, 255, 255, 0.1);
             }
-            
+
             /* Adjust connection drop shadows in dark mode */
             .connection-none {
                 box-shadow: 0px 4px 12px var(--connection-none-shadow);
             }
         }
 
-        /* 
-           ------------------------------------------------
-           Global Base Styles
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Global Base Styles
+            ------------------------------------------------
         */
         * {
             box-sizing: border-box;
@@ -91,10 +89,10 @@
             margin: 0 auto;
         }
 
-        /* 
-           ------------------------------------------------
-           Header + Station Name
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Header + Station Name
+            ------------------------------------------------
         */
         .header {
             display: flex;
@@ -107,8 +105,8 @@
             border-radius: 8px;
             text-align: center;
             background: linear-gradient(
-                135deg, 
-                var(--card-bg) 0%, 
+                135deg,
+                var(--card-bg) 0%,
                 rgba(255,255,255,0) 100%
             );
             box-shadow: 0 2px 6px var(--general-light-shadow);
@@ -123,9 +121,9 @@
         }
 
         /*
-           ------------------------------------------------
-           Info Row (Date/Time + Weather)
-           ------------------------------------------------
+            ------------------------------------------------
+            Info Row (Date/Time + Weather)
+            ------------------------------------------------
         */
         .info-row {
             display: flex;
@@ -191,10 +189,10 @@
             font-weight: 600;
         }
 
-        /* 
-           ------------------------------------------------
-           Departures Section
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Departures Section
+            ------------------------------------------------
         */
         .direction-group {
             margin-bottom: 20px;
@@ -204,6 +202,7 @@
             font-weight: 700;
             margin: 20px 0 10px 0;
             letter-spacing: 0.5px;
+            text-align: center; /* Center the headings */
         }
         .departures {
             display: flex;
@@ -230,15 +229,9 @@
             box-shadow: 0 6px 12px var(--general-light-shadow);
         }
 
-        /* 
-           In dark mode, the default background 
-           for these cards will come from 
-           .departure-card's parent's color. 
-           We'll override it in the code below if needed.
-        */
         @media (prefers-color-scheme: dark) {
             .departure-card {
-                background: #2f4f4f;
+                background: #2f4f4f; /* default to the dark background */
             }
         }
 
@@ -266,42 +259,43 @@
             text-align: right;
         }
 
-        /* 
-           ------------------------------------------------
-           Connection Status Coloring
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Connection Status Coloring
+            ------------------------------------------------
         */
-        .minutes.soon { 
-            color: var(--connection-red);       /* Tram arriving very soon */
+        .minutes.soon {
+            color: var(--connection-red);
         }
-        .minutes.approaching { 
-            color: var(--connection-yellow);    /* Tram within a close window */
+        .minutes.approaching {
+            color: var(--connection-yellow);
         }
-        .minutes.normal { 
-            color: var(--connection-green);     /* Tram comfortably away */
+        .minutes.normal {
+            color: var(--connection-green);
         }
 
-        /* 
-           Connection-based Drop Shadows
-           (Optional addition for an extra highlight)
+        /*
+            ------------------------------------------------
+            More Muted Connection-based Drop Shadows
+            ------------------------------------------------
         */
         .connection-good {
-            box-shadow: 0px 4px 8px rgba(34, 197, 94, 0.4); /* Subtle green glow */
+            box-shadow: 0px 4px 8px rgba(34, 197, 94, 0.2);  /* Subtle green glow */
         }
         .connection-medium {
-            box-shadow: 0px 4px 8px rgba(252, 211, 77, 0.4); /* Subtle yellow glow */
+            box-shadow: 0px 4px 8px rgba(252, 211, 77, 0.2);  /* Subtle yellow glow */
         }
         .connection-poor {
-            box-shadow: 0px 4px 8px rgba(248, 113, 113, 0.4); /* Subtle red glow */
+            box-shadow: 0px 4px 8px rgba(248, 113, 113, 0.2); /* Subtle red glow */
         }
         .connection-none {
             box-shadow: 0px 4px 12px var(--general-light-shadow);
         }
 
-        /* 
-           ------------------------------------------------
-           Last Updated
-           ------------------------------------------------
+        /*
+            ------------------------------------------------
+            Last Updated
+            ------------------------------------------------
         */
         .last-updated {
             text-align: center;
@@ -346,7 +340,6 @@
     <!-- 
         ------------------------------------------------
         JavaScript 
-        - Retaining your logic for fetching + updating
         ------------------------------------------------
     -->
     <script>
@@ -400,7 +393,7 @@
 
             content.innerHTML = `
                 <div class="direction-group">
-                    <h2 class="direction-header">Nordwärts</h2>
+                    <h2 class="direction-header">Auswärts</h2>
                     <div class="departures">
                         ${trams.northbound.map(tram => `
                             <div class="departure-card ${getConnectionClass(tram.connection)}">
@@ -413,7 +406,7 @@
                 </div>
 
                 <div class="direction-group">
-                    <h2 class="direction-header">Südwärts</h2>
+                    <h2 class="direction-header">Einwärts</h2>
                     <div class="departures">
                         ${trams.southbound.map(tram => `
                             <div class="departure-card ${getConnectionClass(tram.connection)}">

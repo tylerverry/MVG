@@ -165,25 +165,22 @@
     }
 
     .departure-card {
-      background: rgba(255,255,255,0.15);
+      background: rgba(255, 255, 255, 0.15);
       border-radius: 12px;
       border: var(--card-border);
-      padding: 1.25rem;
-      align-items: center;
-      gap: 1.5rem;
-      position: relative;
+      padding: 0rem; /* Keep some padding for content breathing room */
       display: grid;
-      grid-template-columns: 8px 80px 1fr 80px; /* Define columns: status bar, line, destination, minutes */
-      grid-template-rows: auto; /* Prevent stacking */
-      align-items: center;
-      gap: 1rem; /* Adjust spacing between items */
-      height: 80px; /* Ensure consistent height */
-    }       
+      grid-template-columns: 80px 1fr 80px; /* Dynamically size status bar, fixed sizes for others */
+      grid-template-rows: 1fr; /* Single row alignment */
+      align-items: center; /* Vertical alignment of all content */
+      gap: 1rem; /* Space between items */
+      height: 80px; /* Fixed height for consistency */
+    }
 
     .departure-card:hover {
       transform: translateY(-3px);
       box-shadow: var(--shadow);
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
     }
 
     .status-bar {
@@ -191,8 +188,8 @@
       height: 100%;
       border-radius: 4px;
       background: #999;
-      grid-column: 1; /* Assign status bar to column 1 */
-      grid-row: 1;    /* Assign to first row */
+      grid-column: 1; /* Assign status bar to the first column */
+      align-self: center;
     }
 
     .connection-good   .status-bar { background: var(--status-green);   }
@@ -201,39 +198,42 @@
     .connection-none   .status-bar { background: #999; }
 
     .line-box {
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 10px;
       width: 80px;
-      height: 80px;
+      height: 100%;
       display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: center; /* Center vertically */
+      justify-content: center; /* Center horizontally */
       font-size: 2rem;
       font-weight: 700;
       color: var(--text-primary);
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      grid-column: 2; /* Line number in column 2 */
-      grid-row: 1;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      grid-column: 2; /* Line box in the second column */
     }
 
     .destination {
+      display: flex;
+      align-items: center; /* Center vertically */
       font-size: 1.4rem;
       font-weight: 500;
       color: var(--text-primary);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      grid-column: 3; /* Destination in column 3 */
-      grid-row: 1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      grid-column: 3; /* Destination text in the third column */
+      height: 100%
     }
 
     .minutes {
+      display: flex;
+      align-items: center; /* Center vertically */
+      justify-content: center; /* Center horizontally */
       font-size: 2.4rem;
       font-weight: 700;
       color: var(--text-primary);
       text-align: right;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      grid-column: 4; /* Minutes in column 4 */
-      grid-row: 1;
-      text-align: right; /* Right-align the minutes */
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      grid-column: 4; /* Minutes in the fourth column */
+      height: 100%
     }
 
     .minutes.soon        { color: var(--status-red);    }
@@ -266,7 +266,8 @@
 
       .departure-card {
         grid-template-columns: 8px 60px 1fr 80px;
-        gap: 1rem;
+        height: auto;
+        gap: .8rem;
         padding: 1rem;
       }
 

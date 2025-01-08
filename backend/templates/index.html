@@ -445,17 +445,18 @@
 
     // Weather
     function updateWeather(weather) {
-      if (!weather) return;
+  if (!weather) return;
 
-      qsel('.weather-temp').textContent = `${weather.temp}°C`;
-      qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
+  qsel('.weather-temp').textContent = `${weather.temp}°C`;
+  qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
 
-      const icon = qsel('.weather-icon');
-      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description;
+  const icon = qsel('.weather-icon');
+  icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
 
-      qsel('.weather-description').textContent = capitalizeWords(weather.description);
-    }
+  // Toggle between English and German descriptions
+  const description = language === 'DE' ? weather.description_de : weather.description_en;
+  qsel('.weather-description').textContent = capitalizeWords(description);
+}
 
 function capitalizeWords(str) {
   return str.replace(/\b\w/g, char => char.toUpperCase());
@@ -605,7 +606,15 @@ function capitalizeWords(str) {
         const key = label.textContent.trim().toLowerCase();
         label.textContent = translations[language][key] || label.textContent;
       });
-      formatDateTime();
+
+      formatDateTime(); // Update time display for the new language
+
+      // Immediately update the weather description
+      if (weather_service.cache) {
+        const cachedWeather = weather_service.cache; // Access cached weather data
+        const description = language === 'DE' ? cachedWeather.description_de : cachedWeather.description_en;
+        qsel('.weather-description').textContent = capitalizeWords(description);
+      }
     });
 
     // Intervals

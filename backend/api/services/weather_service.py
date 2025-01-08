@@ -56,35 +56,49 @@ class WeatherService:
             return None, None
 
     def get_weather(self):
-        """Get current weather and daily forecast"""
+        """Get current weather and daily forecast in both English and German"""
         try:
             if self._is_cache_valid():
                 return self.cache
 
+            # Fetch weather in English
             url = "https://api.openweathermap.org/data/2.5/weather"
-            params = {
+            params_en = {
                 "lat": self.LAT,
                 "lon": self.LON,
                 "appid": self.API_KEY,
-                "units": "metric"
+                "units": "metric",
+                "lang": "en"
             }
+            response_en = requests.get(url, params=params_en, timeout=5)
+            response_en.raise_for_status()
+            weather_data_en = response_en.json()
 
-            response = requests.get(url, params=params, timeout=5)
-            response.raise_for_status()
-            weather_data = response.json()
+            # Fetch weather in German
+            params_de = {
+                "lat": self.LAT,
+                "lon": self.LON,
+                "appid": self.API_KEY,
+                "units": "metric",
+                "lang": "de"
+            }
+            response_de = requests.get(url, params=params_de, timeout=5)
+            response_de.raise_for_status()
+            weather_data_de = response_de.json()
 
             # Get daily min/max
             daily_min, daily_max = self._get_daily_minmax()
 
             processed_data = {
-                "temp": round(weather_data["main"]["temp"]),
-                "temp_min": daily_min if daily_min is not None else round(weather_data["main"]["temp_min"]),
-                "temp_max": daily_max if daily_max is not None else round(weather_data["main"]["temp_max"]),
-                "humidity": weather_data["main"]["humidity"],
-                "wind_speed": round(weather_data["wind"]["speed"] * 3.6, 1),  # m/s to km/h
-                "condition": weather_data["weather"][0]["main"].lower(),
-                "description": weather_data["weather"][0]["description"],
-                "icon": weather_data["weather"][0]["icon"]
+                "temp": round(weather_data_en["main"]["temp"]),
+                "temp_min": daily_min if daily_min is not None else round(weather_data_en["main"]["temp_min"]),
+                "temp_max": daily_max if daily_max is not None else round(weather_data_en["main"]["temp_max"]),
+                "humidity": weather_data_en["main"]["humidity"],
+                "wind_speed": round(weather_data_en["wind"]["speed"] * 3.6, 1),  # m/s to km/h
+                "condition": weather_data_en["weather"][0]["main"].lower(),
+                "description_en": weather_data_en["weather"][0]["description"],
+                "description_de": weather_data_de["weather"][0]["description"],
+                "icon": weather_data_en["weather"][0]["icon"]
             }
 
             # Update cache

@@ -106,9 +106,7 @@
     }
 
     .info-label {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      font-weight: 500;
+      display: none;
     }
 
     .info-value {
@@ -284,7 +282,7 @@
       .minutes {
         font-size: 2rem;
       }
-    }
+    
   </style>
 </head>
 <body>
@@ -404,10 +402,10 @@
         weather: "Wetter"  // Translation for "wetter"
       },
       EN: {
-        outward: "Outbound",
-        inward: "Inbound",
-        lastUpdated: "Last updated",
-        seconds: "seconds",
+        outward: "Away from Old Town",
+        inward: "Towards Old Town",
+        lastUpdated: "Last Updated",
+        seconds: "Seconds Ago",
         errorLoading: "Error loading data.",
         time: "Time",  // Translation for "zeit"
         temperature: "Temperature",  // Translation for "temp"
@@ -425,7 +423,7 @@
     // Time/Date
     function formatDateTime() {
       const now = new Date();
-      const locale = (language === 'DE') ? 'de-DE' : 'en-GB';
+      const locale = (language === 'DE') ? 'de-DE' : 'en-US';
 
       const timeStr = now.toLocaleTimeString(locale, {
         hour: '2-digit',
@@ -444,25 +442,73 @@
     }
 
     // Weather
-    function updateWeather(weather) {
+    function renderWeather(weather) {
       if (!weather) return;
 
-      qsel('.weather-temp').textContent = `${weather.temp}°C`;
-      qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
+      // Dynamically calculate temp and unit
+      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
+      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
+      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
+      const unit = language === 'EN' ? '°F' : '°C';
+
+      // Update UI elements
+      qsel('.weather-temp').textContent = `${temp}${unit}`;
+      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
+      qsel('.weather-description').textContent =
+          language === 'EN' ? weather.description_en : weather.description_de;
 
       const icon = qsel('.weather-icon');
       icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description_en; // Default to English description for accessibility
+      icon.alt = weather.description;
+  }
 
-      // Set descriptions for both languages
-      qsel('.weather-description').dataset.descriptionEn = capitalizeWords(weather.description_en);
-      qsel('.weather-description').dataset.descriptionDe = capitalizeWords(weather.description_de);
+    function convertToFahrenheit(celsius) {
+      return Math.round((celsius * 9) / 5 + 32);
+  }
+    
+   function updateWeather(weather) {
+      if (!weather) return;
 
-      // Display the correct description based on the current language
-      qsel('.weather-description').textContent = language === 'DE' 
-        ? qsel('.weather-description').dataset.descriptionDe 
-        : qsel('.weather-description').dataset.descriptionEn;
-    }
+      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
+      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
+      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
+      const unit = language === 'EN' ? '°F' : '°C';
+
+      // Update temperature and forecast
+      qsel('.weather-temp').textContent = `${temp}${unit}`;
+      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
+
+      // Update weather description
+      qsel('.weather-description').textContent =
+          language === 'EN' ? weather.description_en : weather.description_de;
+
+      // Update weather icon
+      const icon = qsel('.weather-icon');
+      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+      icon.alt = weather.description;
+  }
+
+  function forceWeatherUpdate() {
+      if (!weatherService.cache) return; // Ensure we have valid data
+
+      const weather = weatherService.cache;
+
+      // Re-calculate temperature based on the current language
+      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
+      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
+      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
+      const unit = language === 'EN' ? '°F' : '°C';
+
+      // Update weather display elements
+      qsel('.weather-temp').textContent = `${temp}${unit}`;
+      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
+      qsel('.weather-description').textContent =
+          language === 'EN' ? weather.description_en : weather.description_de;
+
+      const icon = qsel('.weather-icon');
+      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+      icon.alt = weather.description;
+  }
 
 function capitalizeWords(str) {
   return str.replace(/\b\w/g, char => char.toUpperCase());
@@ -573,19 +619,20 @@ function capitalizeWords(str) {
 
     // Update display
     function updateDisplay(data) {
-      if (!data) return;
-      updateWeather(data.weather);
-      formatDateTime();
+        if (!data) return;
 
-      const outArr = data.trams.northbound;
-      const inArr  = data.trams.southbound;
+        renderWeather(data.weather); // Re-render weather immediately
+        formatDateTime();
 
-      renderTrams(sel('dep-outward'), outwardState, outArr, 'outward');
-      renderTrams(sel('dep-inward'), inwardState, inArr, 'inward');
+        const outArr = data.trams.northbound;
+        const inArr = data.trams.southbound;
 
-      refreshTime = Math.floor(Date.now() / 1000);
-      qsel('.last-updated').textContent = 
-        `${translations[language].lastUpdated} 0 ${translations[language].seconds}`;
+        renderTrams(sel('dep-outward'), outwardState, outArr, 'outward');
+        renderTrams(sel('dep-inward'), inwardState, inArr, 'inward');
+
+        refreshTime = Math.floor(Date.now() / 1000);
+        qsel('.last-updated').textContent =
+            `${translations[language].lastUpdated} 0 ${translations[language].seconds}`;
     }
 
     // Fetch
@@ -604,23 +651,17 @@ function capitalizeWords(str) {
 
     // Language toggle
     sel('station-toggle').addEventListener('click', () => {
-      language = (language === 'DE') ? 'EN' : 'DE';
+      language = language === 'DE' ? 'EN' : 'DE';
+
       sel('hdr-outward').textContent = translations[language].outward;
       sel('hdr-inward').textContent = translations[language].inward;
 
-      document.querySelectorAll('.info-label').forEach(label => {
-        const key = label.textContent.trim().toLowerCase();
-        label.textContent = translations[language][key] || label.textContent;
-      });
+      if (weatherService.cache) {
+          renderWeather(weatherService.cache); // Re-render with the new language
+      }
 
-      formatDateTime(); // Update time display for the new language
-
-      // Immediately update the weather description
-      const weatherDescEl = qsel('.weather-description');
-      weatherDescEl.textContent = language === 'DE' 
-        ? weatherDescEl.dataset.descriptionDe 
-        : weatherDescEl.dataset.descriptionEn;
-    });
+      formatDateTime();
+  });
 
     // Intervals
     setInterval(formatDateTime, 1000);

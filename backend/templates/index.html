@@ -445,18 +445,24 @@
 
     // Weather
     function updateWeather(weather) {
-  if (!weather) return;
+      if (!weather) return;
 
-  qsel('.weather-temp').textContent = `${weather.temp}°C`;
-  qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
+      qsel('.weather-temp').textContent = `${weather.temp}°C`;
+      qsel('.weather-forecast').textContent = `(↑${weather.temp_max}° ↓${weather.temp_min}°)`;
 
-  const icon = qsel('.weather-icon');
-  icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+      const icon = qsel('.weather-icon');
+      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+      icon.alt = weather.description_en; // Default to English description for accessibility
 
-  // Toggle between English and German descriptions
-  const description = language === 'DE' ? weather.description_de : weather.description_en;
-  qsel('.weather-description').textContent = capitalizeWords(description);
-}
+      // Set descriptions for both languages
+      qsel('.weather-description').dataset.descriptionEn = capitalizeWords(weather.description_en);
+      qsel('.weather-description').dataset.descriptionDe = capitalizeWords(weather.description_de);
+
+      // Display the correct description based on the current language
+      qsel('.weather-description').textContent = language === 'DE' 
+        ? qsel('.weather-description').dataset.descriptionDe 
+        : qsel('.weather-description').dataset.descriptionEn;
+    }
 
 function capitalizeWords(str) {
   return str.replace(/\b\w/g, char => char.toUpperCase());
@@ -610,11 +616,10 @@ function capitalizeWords(str) {
       formatDateTime(); // Update time display for the new language
 
       // Immediately update the weather description
-      if (weather_service.cache) {
-        const cachedWeather = weather_service.cache; // Access cached weather data
-        const description = language === 'DE' ? cachedWeather.description_de : cachedWeather.description_en;
-        qsel('.weather-description').textContent = capitalizeWords(description);
-      }
+      const weatherDescEl = qsel('.weather-description');
+      weatherDescEl.textContent = language === 'DE' 
+        ? weatherDescEl.dataset.descriptionDe 
+        : weatherDescEl.dataset.descriptionEn;
     });
 
     // Intervals

@@ -334,350 +334,328 @@
       THREE.js for the 3D background
       ------------------------------------------------
     */
-    const canvas = document.getElementById('bg-canvas');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth/window.innerHeight, 0.1, 1000
-    );
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    const geometry = new THREE.BufferGeometry();
-    const count = 600;
-    const positions = new Float32Array(count * 3);
-
-    for (let i=0; i<count*3; i++){
-      positions[i] = (Math.random() - 0.5)*5;
-    }
-
-    geometry.setAttribute(
-      'position', new THREE.BufferAttribute(positions, 3)
-    );
-    const material = new THREE.PointsMaterial({
-      size: 0.008,
-      color: '#fff',
-      transparent: true,
-      opacity: 0.65
-    });
-    const starField = new THREE.Points(geometry, material);
-    scene.add(starField);
-
-    camera.position.z = 2;
-    function animateBG() {
-      requestAnimationFrame(animateBG);
-      starField.rotation.y += 0.0005;
-      starField.rotation.x += 0.0003;
-      renderer.render(scene, camera);
-    }
-    animateBG();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
+      const canvas = document.getElementById('bg-canvas');
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75, window.innerWidth / window.innerHeight, 0.1, 1000
+      );
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+      document.body.appendChild(renderer.domElement);
 
-    /*
-      ------------------------------------------------
-      MAIN FUNCTIONALITY (Partial-Diff Logic)
-      ------------------------------------------------
-    */
-    let refreshTime = null;
-    let language = 'DE';
-    const WALKING_TIME = 6;
+      const geometry = new THREE.BufferGeometry();
+      const count = 600;
+      const positions = new Float32Array(count * 3);
 
-    let outwardState = {};
-    let inwardState  = {};
-
-    const translations = {
-      DE: {
-        outward: "Stadtauswärts",
-        inward: "Innenstadt",
-        lastUpdated: "Letzte Aktualisierung vor",
-        seconds: "Sekunden",
-        errorLoading: "Fehler beim Laden der Daten.",
-        time: "Zeit",  // Translation for "zeit"
-        temperature: "Temperatur",  // Translation for "temp"
-        weather: "Wetter"  // Translation for "wetter"
-      },
-      EN: {
-        outward: "Away from Old Town",
-        inward: "Towards Old Town",
-        lastUpdated: "Last Updated",
-        seconds: "Seconds Ago",
-        errorLoading: "Error loading data.",
-        time: "Time",  // Translation for "zeit"
-        temperature: "Temperature",  // Translation for "temp"
-        weather: "Weather"  // Translation for "wetter"
+      for (let i = 0; i < count * 3; i++) {
+          positions[i] = (Math.random() - 0.5) * 5;
       }
-    };
 
-    function sel(id) {
-      return document.getElementById(id);
-    }
-    function qsel(selector) {
-      return document.querySelector(selector);
-    }
-
-    // Time/Date
-    function formatDateTime() {
-      const now = new Date();
-      const locale = (language === 'DE') ? 'de-DE' : 'en-US';
-
-      const timeStr = now.toLocaleTimeString(locale, {
-        hour: '2-digit',
-        minute: '2-digit'
+      geometry.setAttribute(
+          'position', new THREE.BufferAttribute(positions, 3)
+      );
+      const material = new THREE.PointsMaterial({
+          size: 0.008,
+          color: '#fff',
+          transparent: true,
+          opacity: 0.65
       });
-      qsel('.time-big').textContent = timeStr;
+      const starField = new THREE.Points(geometry, material);
+      scene.add(starField);
 
-      const weekday = now.toLocaleDateString(locale, {
-        weekday: 'long'
+      camera.position.z = 2;
+      function animateBG() {
+          requestAnimationFrame(animateBG);
+          starField.rotation.y += 0.0005;
+          starField.rotation.x += 0.0003;
+          renderer.render(scene, camera);
+      }
+      animateBG();
+
+      window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
       });
-      const dateStr = now.toLocaleDateString(locale, {
-        day: 'numeric',
-        month: 'long'
-      });
-      qsel('.date-small').textContent = `${weekday}, ${dateStr}`;
-    }
 
-    // Weather
-    function renderWeather(weather) {
-      if (!weather) return;
+      /*
+        ------------------------------------------------
+        MAIN FUNCTIONALITY (Data Fetching & UI Updates)
+        ------------------------------------------------
+      */
+      let refreshTime = null;
+      let language = 'DE'; // Default language is German
+      const WALKING_TIME = 6; // Walking time threshold for styling
 
-      // Dynamically calculate temp and unit
-      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
-      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
-      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
-      const unit = language === 'EN' ? '°F' : '°C';
+      let outwardState = {};
+      let inwardState = {};
 
-      // Update UI elements
-      qsel('.weather-temp').textContent = `${temp}${unit}`;
-      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
-      qsel('.weather-description').textContent =
-          language === 'EN' ? weather.description_en : weather.description_de;
-
-      const icon = qsel('.weather-icon');
-      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description;
-  }
-
-    function convertToFahrenheit(celsius) {
-      return Math.round((celsius * 9) / 5 + 32);
-  }
-    
-   function updateWeather(weather) {
-      if (!weather) return;
-
-      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
-      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
-      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
-      const unit = language === 'EN' ? '°F' : '°C';
-
-      // Update temperature and forecast
-      qsel('.weather-temp').textContent = `${temp}${unit}`;
-      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
-
-      // Update weather description
-      qsel('.weather-description').textContent =
-          language === 'EN' ? weather.description_en : weather.description_de;
-
-      // Update weather icon
-      const icon = qsel('.weather-icon');
-      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description;
-  }
-
-  function forceWeatherUpdate() {
-      if (!weatherService.cache) return; // Ensure we have valid data
-
-      const weather = weatherService.cache;
-
-      // Re-calculate temperature based on the current language
-      const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
-      const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
-      const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
-      const unit = language === 'EN' ? '°F' : '°C';
-
-      // Update weather display elements
-      qsel('.weather-temp').textContent = `${temp}${unit}`;
-      qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
-      qsel('.weather-description').textContent =
-          language === 'EN' ? weather.description_en : weather.description_de;
-
-      const icon = qsel('.weather-icon');
-      icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
-      icon.alt = weather.description;
-  }
-
-function capitalizeWords(str) {
-  return str.replace(/\b\w/g, char => char.toUpperCase());
-}
-
-    function capitalizeWords(str) {
-      return str.replace(/\b\w/g, char => char.toUpperCase());
-    }
-
-    function capitalizeWords(str) {
-      return str.replace(/\b\w/g, char => char.toUpperCase());
-    }
-
-    // Connection / minute helpers
-    function getConnectionClass(conn) {
-      if (!conn) return 'connection-none';
-      return `connection-${conn.status}`;
-    }
-    function getMinuteColor(minutes) {
-      if (minutes <= (WALKING_TIME - 1)) return 'soon';
-      if (minutes <= (WALKING_TIME + 1)) return 'approaching';
-      if (minutes <= (WALKING_TIME + 3)) return 'normal';
-      return '';
-    }
-
-    // Unique ID
-    function getTramId(tram, i, direction) {
-      return `${direction}-${i}-${tram.line}-${tram.destination}`;
-    }
-
-    // CREATE / UPDATE / REMOVE
-    function createTramCard(tram) {
-      const card = document.createElement('div');
-      card.className = `departure-card ${getConnectionClass(tram.connection)}`;
-      card.innerHTML = `
-        <div class="status-bar"></div>
-        <div class="line-box">${tram.line}</div>
-        <div class="destination">${tram.destination}</div>
-        <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
-      `;
-      return card;
-    }
-    function createPlaceholderCard() {
-      const card = document.createElement('div');
-      card.className = `departure-card connection-none`;
-      card.innerHTML = `
-        <div class="status-bar"></div>
-        <div class="line-box">--</div>
-        <div class="destination placeholder">Keine Abfahrt</div>
-        <div class="minutes">--</div>
-      `;
-      return card;
-    }
-    function updateTramCard(card, tram) {
-      card.className = `departure-card ${getConnectionClass(tram.connection)}`;
-      card.querySelector('.line-box').textContent = tram.line;
-      card.querySelector('.destination').textContent = tram.destination;
-      const minEl = card.querySelector('.minutes');
-      minEl.textContent = tram.minutes;
-      minEl.className = `minutes ${getMinuteColor(tram.minutes)}`;
-    }
-    function removeTramCard(card) {
-      card.remove();
-    }
-
-    // Render partial diff
-    function renderTrams(container, oldState, newArr, directionKey) {
-      const newOrderIds = [];
-      for (let i = 0; i < 4; i++) {
-        const tram = newArr[i];
-        if (tram) {
-          const id = getTramId(tram, i, directionKey);
-          newOrderIds.push(id);
-          if (!oldState[id]) {
-            const c = createTramCard(tram);
-            container.appendChild(c);
-            oldState[id] = { data: tram, cardElement: c };
-          } else {
-            updateTramCard(oldState[id].cardElement, tram);
+      // Translation keys for both DE and EN
+      const translations = {
+          DE: {
+              outward: "Stadtauswärts",
+              inward: "Innenstadt",
+              lastUpdated: "Letzte Aktualisierung vor",
+              seconds: "Sekunden",
+              errorLoading: "Fehler beim Laden der Daten.",
+              time: "Zeit",
+              temperature: "Temperatur",
+              weather: "Wetter"
+          },
+          EN: {
+              outward: "Away from Old Town",
+              inward: "Towards Old Town",
+              lastUpdated: "Last Updated",
+              seconds: "Seconds Ago",
+              errorLoading: "Error loading data.",
+              time: "Time",
+              temperature: "Temperature",
+              weather: "Weather"
           }
-        } else {
-          // Add placeholders for missing trams
-          const pid = `placeholder-${directionKey}-${i}`;
-          newOrderIds.push(pid);
-          if (!oldState[pid]) {
-            const ph = createPlaceholderCard();
-            container.appendChild(ph);
-            oldState[pid] = { data: null, cardElement: ph };
-          }
-        }
+      };
+
+      // Utility functions for selecting elements
+      function sel(id) {
+          return document.getElementById(id);
+      }
+      function qsel(selector) {
+          return document.querySelector(selector);
       }
 
-      // Ensure elements are reordered correctly
-      newOrderIds.forEach(id => {
-        if (oldState[id]) {
-          container.appendChild(oldState[id].cardElement);
-        }
+      /*
+        ------------------------------------------------
+        TIME AND DATE FORMATTING
+        ------------------------------------------------
+      */
+      function formatDateTime() {
+          const now = new Date();
+          const locale = language === 'DE' ? 'de-DE' : 'en-US';
+
+          const timeStr = now.toLocaleTimeString(locale, {
+              hour: '2-digit',
+              minute: '2-digit'
+          });
+          qsel('.time-big').textContent = timeStr;
+
+          const weekday = now.toLocaleDateString(locale, { weekday: 'long' });
+          const dateStr = now.toLocaleDateString(locale, {
+              day: 'numeric',
+              month: 'long'
+          });
+          qsel('.date-small').textContent = `${weekday}, ${dateStr}`;
+      }
+
+      /*
+        ------------------------------------------------
+        WEATHER SERVICE (Caching and Rendering)
+        ------------------------------------------------
+      */
+      const weatherService = {
+          cache: null // Cache the latest weather data for efficient toggling
+      };
+
+      // Convert Celsius to Fahrenheit for EN locale
+      function convertToFahrenheit(celsius) {
+          return Math.round((celsius * 9) / 5 + 32);
+      }
+
+      // Render weather data based on the current language
+      function renderWeather(weather) {
+          if (!weather) return;
+
+          // Dynamically calculate temp and unit based on language
+          const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
+          const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
+          const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
+          const unit = language === 'EN' ? '°F' : '°C';
+
+          // Update temperature and forecast
+          qsel('.weather-temp').textContent = `${temp}${unit}`;
+          qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
+
+          // Update weather description
+          qsel('.weather-description').textContent =
+              language === 'EN' ? weather.description_en : weather.description_de;
+
+          // Update weather icon
+          const icon = qsel('.weather-icon');
+          icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+          icon.alt = weather.description;
+      }
+
+      /*
+        ------------------------------------------------
+        FETCH AND UPDATE DISPLAY DATA
+        ------------------------------------------------
+      */
+      async function fetchData() {
+          try {
+              const res = await fetch('/api/data');
+              if (!res.ok) throw new Error(res.statusText);
+              const data = await res.json();
+
+              weatherService.cache = data.weather; // Cache the latest weather data
+              updateDisplay(data); // Update UI with new data
+          } catch (error) {
+              console.error(error);
+              sel('dep-outward').innerHTML = `<div class="placeholder">${translations[language].errorLoading}</div>`;
+              sel('dep-inward').innerHTML = `<div class="placeholder">${translations[language].errorLoading}</div>`;
+          }
+      }
+
+      function updateDisplay(data) {
+          if (!data) return;
+
+          renderWeather(data.weather); // Render latest weather immediately
+          formatDateTime();
+
+          // Update tram data
+          const outArr = data.trams.northbound || [];
+          const inArr = data.trams.southbound || [];
+
+          renderTrams(sel('dep-outward'), outwardState, outArr, 'outward');
+          renderTrams(sel('dep-inward'), inwardState, inArr, 'inward');
+
+          refreshTime = Math.floor(Date.now() / 1000); // Record the refresh time
+          qsel('.last-updated').textContent =
+              `${translations[language].lastUpdated} 0 ${translations[language].seconds}`;
+      }
+
+      /*
+        ------------------------------------------------
+        LANGUAGE TOGGLE FUNCTIONALITY
+        ------------------------------------------------
+      */
+      sel('station-toggle').addEventListener('click', () => {
+          language = language === 'DE' ? 'EN' : 'DE'; // Toggle language
+
+          // Update text in direction headers
+          sel('hdr-outward').textContent = translations[language].outward;
+          sel('hdr-inward').textContent = translations[language].inward;
+
+          // Re-render weather with cached data
+          if (weatherService.cache) {
+              renderWeather(weatherService.cache);
+          }
+
+          // Update time and date format
+          formatDateTime();
       });
 
-      // Remove any old cards not in the new order
-      for (const [id, obj] of Object.entries(oldState)) {
-        if (!newOrderIds.includes(id)) {
-          removeTramCard(obj.cardElement);
-          delete oldState[id];
-        }
-      }
-    }
-
-    // Update display
-    function updateDisplay(data) {
-        if (!data) return;
-
-        renderWeather(data.weather); // Re-render weather immediately
-        formatDateTime();
-
-        const outArr = data.trams.northbound;
-        const inArr = data.trams.southbound;
-
-        renderTrams(sel('dep-outward'), outwardState, outArr, 'outward');
-        renderTrams(sel('dep-inward'), inwardState, inArr, 'inward');
-
-        refreshTime = Math.floor(Date.now() / 1000);
-        qsel('.last-updated').textContent =
-            `${translations[language].lastUpdated} 0 ${translations[language].seconds}`;
-    }
-
-    // Fetch
-    async function fetchData() {
-      try {
-        const res = await fetch('/api/data');
-        if (!res.ok) throw new Error(res.statusText);
-        const data = await res.json();
-        updateDisplay(data);
-      } catch (error) {
-        console.error(error);
-        sel('dep-outward').textContent = translations[language].errorLoading;
-        sel('dep-inward').textContent  = translations[language].errorLoading;
-      }
-    }
-
-    // Language toggle
-    sel('station-toggle').addEventListener('click', () => {
-      language = language === 'DE' ? 'EN' : 'DE';
-
-      sel('hdr-outward').textContent = translations[language].outward;
-      sel('hdr-inward').textContent = translations[language].inward;
-
-      if (weatherService.cache) {
-          renderWeather(weatherService.cache); // Re-render with the new language
+      /*
+        ------------------------------------------------
+        DEPARTURE LIST RENDERING (Partial Diff)
+        ------------------------------------------------
+      */
+      function createTramCard(tram) {
+          const card = document.createElement('div');
+          card.className = `departure-card ${getConnectionClass(tram.connection)}`;
+          card.innerHTML = `
+              <div class="status-bar"></div>
+              <div class="line-box">${tram.line}</div>
+              <div class="destination">${tram.destination}</div>
+              <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
+          `;
+          return card;
       }
 
-      formatDateTime();
-  });
+      function createPlaceholderCard() {
+          const card = document.createElement('div');
+          card.className = `departure-card connection-none`;
+          card.innerHTML = `
+              <div class="status-bar"></div>
+              <div class="line-box">--</div>
+              <div class="destination placeholder">Keine Abfahrt</div>
+              <div class="minutes">--</div>
+          `;
+          return card;
+      }
 
-    // Intervals
-    setInterval(formatDateTime, 1000);
+      function updateTramCard(card, tram) {
+          card.className = `departure-card ${getConnectionClass(tram.connection)}`;
+          card.querySelector('.line-box').textContent = tram.line;
+          card.querySelector('.destination').textContent = tram.destination;
+          const minutesEl = card.querySelector('.minutes');
+          minutesEl.textContent = tram.minutes;
+          minutesEl.className = `minutes ${getMinuteColor(tram.minutes)}`;
+      }
 
-    setInterval(() => {
-      if (!refreshTime) return;
-      const now = Math.floor(Date.now() / 1000);
-      const secs = now - refreshTime;
-      const lu = qsel('.last-updated');
-      lu.textContent =
-        `${translations[language].lastUpdated} ${secs} ${translations[language].seconds}`;
-      lu.classList.toggle('stale', secs > 45);
-    }, 1000);
+      function renderTrams(container, oldState, newArr, directionKey) {
+          const newOrderIds = [];
+          for (let i = 0; i < 4; i++) {
+              const tram = newArr[i];
+              if (tram) {
+                  const id = `${directionKey}-${i}-${tram.line}-${tram.destination}`;
+                  newOrderIds.push(id);
+                  if (!oldState[id]) {
+                      const card = createTramCard(tram);
+                      container.appendChild(card);
+                      oldState[id] = { data: tram, cardElement: card };
+                  } else {
+                      updateTramCard(oldState[id].cardElement, tram);
+                  }
+              } else {
+                  const pid = `placeholder-${directionKey}-${i}`;
+                  newOrderIds.push(pid);
+                  if (!oldState[pid]) {
+                      const placeholder = createPlaceholderCard();
+                      container.appendChild(placeholder);
+                      oldState[pid] = { data: null, cardElement: placeholder };
+                  }
+              }
+          }
 
-    fetchData();
-    setInterval(fetchData, 15000);
+          // Reorder elements in the DOM and remove old ones
+          newOrderIds.forEach(id => {
+              if (oldState[id]) {
+                  container.appendChild(oldState[id].cardElement);
+              }
+          });
+
+          for (const [id, obj] of Object.entries(oldState)) {
+              if (!newOrderIds.includes(id)) {
+                  obj.cardElement.remove();
+                  delete oldState[id];
+              }
+          }
+      }
+
+      /*
+        ------------------------------------------------
+        UTILITY FUNCTIONS FOR TRAM STATUS AND STYLING
+        ------------------------------------------------
+      */
+      function getConnectionClass(conn) {
+          if (!conn) return 'connection-none';
+          return `connection-${conn.status}`;
+      }
+
+      function getMinuteColor(minutes) {
+          if (minutes <= WALKING_TIME - 1) return 'soon';
+          if (minutes <= WALKING_TIME + 1) return 'approaching';
+          if (minutes <= WALKING_TIME + 3) return 'normal';
+          return '';
+      }
+
+      /*
+        ------------------------------------------------
+        INTERVALS AND INITIAL FETCH
+        ------------------------------------------------
+      */
+      setInterval(formatDateTime, 1000); // Update time every second
+
+      setInterval(() => {
+          if (!refreshTime) return;
+          const now = Math.floor(Date.now() / 1000);
+          const secs = now - refreshTime;
+          const lastUpdatedEl = qsel('.last-updated');
+          lastUpdatedEl.textContent =
+              `${translations[language].lastUpdated} ${secs} ${translations[language].seconds}`;
+          lastUpdatedEl.classList.toggle('stale', secs > 45);
+      }, 1000); // Update "Last Updated" time every second
+
+      fetchData();
+      setInterval(fetchData, 15000); // Fetch data every 15 seconds
   </script>
 </body>
 </html>

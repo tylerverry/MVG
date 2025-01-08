@@ -294,18 +294,23 @@
     <div class="header" id="station-toggle">
       <div class="station-name">PRINZ-EUGEN-PARK</div>
       <div class="header-info">
+        <!-- Zeit (Time) Block -->
         <div class="info-block">
-          <span class="info-label">Zeit</span>
+          <span class="info-label" data-translation-key="time"></span> <!-- Time will be translated -->
           <span class="info-value time-big"></span>
           <span class="info-secondary date-small"></span>
         </div>
+      
+        <!-- Temperatur (Temperature) Block -->
         <div class="info-block">
-          <span class="info-label">Temperatur</span>
+          <span class="info-label" data-translation-key="temperature"></span> <!-- Temperature will be translated -->
           <span class="info-value weather-temp">--°C</span>
           <span class="info-secondary weather-forecast">(↑--° ↓--°)</span>
         </div>
+      
+        <!-- Wetter (Weather) Block -->
         <div class="info-block">
-          <span class="info-label">Wetter</span>
+          <span class="info-label" data-translation-key="weather"></span> <!-- Weather will be translated -->
           <img class="weather-icon" src="" alt="Wetter" />
           <span class="weather-description">--</span>
         </div>
@@ -394,9 +399,9 @@
         lastUpdated: "Letzte Aktualisierung vor",
         seconds: "Sekunden",
         errorLoading: "Fehler beim Laden der Daten.",
-        time: "Zeit",
-        temperature: "Temperatur",
-        weather: "Wetter"
+        time: "Zeit",  // Translation for "zeit"
+        temperature: "Temperatur",  // Translation for "temp"
+        weather: "Wetter"  // Translation for "wetter"
       },
       EN: {
         outward: "Outbound",
@@ -404,9 +409,9 @@
         lastUpdated: "Last updated",
         seconds: "seconds",
         errorLoading: "Error loading data.",
-        time: "Time",
-        temperature: "Temperature",
-        weather: "Weather"
+        time: "Time",  // Translation for "zeit"
+        temperature: "Temperature",  // Translation for "temp"
+        weather: "Weather"  // Translation for "wetter"
       }
     };
 

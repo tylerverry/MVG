@@ -127,6 +127,30 @@
       color: var(--text-secondary);
     }
 
+    .weather-alert-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        padding: .5rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        border: var(--card-border);
+        width: 100%;
+        margin: 0.3rem 0;
+    }
+
+    .weather-alert-card.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
     .weather-icon {
       width: 72px; /* Adjust size if needed */
       height: 72px;
@@ -560,6 +584,65 @@
           // Get and set wind description based on current language
           const [windEn, windDe] = getWindDescription(weather.wind_speed);
           qsel('.weather-wind').textContent = language === 'EN' ? windEn : windDe;
+
+          const alerts = {
+              DE: [],
+              EN: []
+          };
+          
+          if (weather.temp <= 0) {
+              alerts.EN.push('❄️ Icy Conditions Possible ❄️');
+              alerts.DE.push('❄️ Glättegefahr Möglich ❄️');
+          }
+          if (weather.temp >= 30) {
+              alerts.EN.push('🌡️ Heat Warning 🌡️');
+              alerts.DE.push('🌡️ Hitzewarnung 🌡️');
+          }
+          if (weather.rain_chance > 60) {
+              alerts.EN.push('☔ Bring Umbrella ☔');
+              alerts.DE.push('☔ Regenschirm Mitnehmen ☔');
+          }
+          if (weather.wind_speed > 20) {
+              alerts.EN.push('💨 Strong Winds 💨');
+              alerts.DE.push('💨 Starker Wind 💨');
+          }
+          if (weather.temp <= 5 && weather.rain_chance > 40) {
+              alerts.EN.push('🌨️ Risk Of Snow 🌨️');
+              alerts.DE.push('🌨️ Schneefallrisiko 🌨️');
+          }
+          if (weather.temp >= 25 && weather.humidity > 70) {
+              alerts.EN.push('💧 High Humidity 💧');
+              alerts.DE.push('💧 Hohe Luftfeuchtigkeit 💧');
+          }
+          if (weather.wind_speed > 15 && weather.rain_chance > 50) {
+              alerts.EN.push('🌪️ Stormy Conditions 🌪️');
+              alerts.DE.push('🌪️ Stürmische Bedingungen 🌪️');
+          }
+          if (weather.uvi >= 6 && weather.uvi < 8) {
+              alerts.EN.push('☀️ High UV Index ☀️');
+              alerts.DE.push('☀️ Hoher UV-Index ☀️');
+          }
+          if (weather.uvi >= 8 && weather.uvi < 11) {
+              alerts.EN.push('⚠️ Very High UV Index ⚠️');
+              alerts.DE.push('⚠️ Sehr Hoher UV-Index ⚠️');
+          }
+          if (weather.uvi >= 11) {
+              alerts.EN.push('🔆 Extreme UV Index 🔆');
+              alerts.DE.push('🔆 Extremer UV-Index 🔆');
+          }
+          
+          const alertCard = document.querySelector('.weather-alert-card') 
+              || document.createElement('div');
+          alertCard.className = 'weather-alert-card';
+          
+          const currentAlerts = alerts[language];  // Use current language setting
+          if (currentAlerts.length > 0) {
+              alertCard.classList.add('active');
+              alertCard.textContent = currentAlerts.join(' • ');
+              document.querySelector('.header').appendChild(alertCard);
+          } else if (alertCard.parentNode) {
+              alertCard.remove();
+          }
       }
 
       /*

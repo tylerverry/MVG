@@ -56,56 +56,73 @@ class WeatherService:
             return None, None
 
     def get_weather(self):
-        """Get current weather and daily forecast in both English and German"""
+        """Get weather forecast for the next 6 hours"""
         try:
             if self._is_cache_valid():
                 return self.cache
 
-            # Fetch weather in English
-            url = "https://api.openweathermap.org/data/2.5/weather"
-            params_en = {
+            # Fetch forecast data
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            params = {
                 "lat": self.LAT,
                 "lon": self.LON,
                 "appid": self.API_KEY,
                 "units": "metric",
-                "lang": "en"
+                "cnt": 3  # Limit to next 3 time slots (9 hours)
             }
-            response_en = requests.get(url, params=params_en, timeout=5)
+
+            # Get forecast in both languages
+            response_en = requests.get(url, params=dict(params, lang="en"), timeout=5)
             response_en.raise_for_status()
-            weather_data_en = response_en.json()
+            forecast_en = response_en.json()
 
-            # Fetch weather in German
-            params_de = {
-                "lat": self.LAT,
-                "lon": self.LON,
-                "appid": self.API_KEY,
-                "units": "metric",
-                "lang": "de"
-            }
-            response_de = requests.get(url, params=params_de, timeout=5)
+            response_de = requests.get(url, params=dict(params, lang="de"), timeout=5)
             response_de.raise_for_status()
-            weather_data_de = response_de.json()
+            forecast_de = response_de.json()
 
-            # Get daily min/max
-            daily_min, daily_max = self._get_daily_minmax()
+            # Process forecast data
+            forecasts = forecast_en['list'][:2]  # Next 6 hours (2 time slots)
+            
+            if forecasts:
+                # Find most relevant conditions
+                max_pop = max(f['pop'] for f in forecasts)  # Highest rain probability
+                min_feels_like = min(f['main']['feels_like'] for f in forecasts)
+                max_wind = max(f['wind']['speed'] for f in forecasts)
+                
+                # Get the forecast with highest rain probability
+                worst_forecast = max(forecasts, key=lambda x: x['pop'])
+                
+                # Find matching German description
+                de_forecast = next(
+                    f for f in forecast_de['list'] 
+                    if f['dt'] == worst_forecast['dt']
+                )
 
-            processed_data = {
-                "temp": round(weather_data_en["main"]["temp"]),
-                "temp_min": daily_min if daily_min is not None else round(weather_data_en["main"]["temp_min"]),
-                "temp_max": daily_max if daily_max is not None else round(weather_data_en["main"]["temp_max"]),
-                "humidity": weather_data_en["main"]["humidity"],
-                "wind_speed": round(weather_data_en["wind"]["speed"] * 3.6, 1),  # m/s to km/h
-                "condition": weather_data_en["weather"][0]["main"].lower(),
-                "description_en": weather_data_en["weather"][0]["description"],
-                "description_de": weather_data_de["weather"][0]["description"],
-                "icon": weather_data_en["weather"][0]["icon"]
-            }
+                processed_data = {
+                    "temp": round(min_feels_like),  # Using feels_like as it's more relevant
+                    "temp_min": round(min(f['main']['temp_min'] for f in forecasts)),
+                    "temp_max": round(max(f['main']['temp_max'] for f in forecasts)),
+                    "humidity": worst_forecast['main']['humidity'],
+                    "wind_speed": round(max_wind * 3.6, 1),  # m/s to km/h
+                    "condition": worst_forecast['weather'][0]['main'].lower(),
+                    "description_en": worst_forecast['weather'][0]['description'],
+                    "description_de": de_forecast['weather'][0]['description'],
+                    "icon": worst_forecast['weather'][0]['icon'],
+                    "rain_chance": round(max_pop * 100),  # Convert to percentage
+                    "forecast_time": worst_forecast['dt']
+                }
 
-            # Update cache
-            self.cache = processed_data
-            self.cache_time = datetime.now()
+                # Add rain/snow volume if present
+                if 'rain' in worst_forecast:
+                    processed_data['rain_volume'] = worst_forecast['rain'].get('3h', 0)
+                if 'snow' in worst_forecast:
+                    processed_data['snow_volume'] = worst_forecast['snow'].get('3h', 0)
 
-            return processed_data
+                # Update cache
+                self.cache = processed_data
+                self.cache_time = datetime.now()
+
+                return processed_data
 
         except requests.Timeout:
             logger.error("Weather API timeout")

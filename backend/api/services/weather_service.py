@@ -98,17 +98,20 @@ class WeatherService:
                     if f['dt'] == worst_forecast['dt']
                 )
 
+                # Get all "feels like" temperatures for the forecast period
+                feels_like_temps = [f['main']['feels_like'] for f in forecasts]
+                
                 processed_data = {
-                    "temp": round(min_feels_like),  # Using feels_like as it's more relevant
-                    "temp_min": round(min(f['main']['temp_min'] for f in forecasts)),
-                    "temp_max": round(max(f['main']['temp_max'] for f in forecasts)),
+                    "temp": round(feels_like_temps[0]),                # Current feels like
+                    "temp_min": round(min(feels_like_temps)),         # Min feels like
+                    "temp_max": round(max(feels_like_temps)),         # Max feels like
                     "humidity": worst_forecast['main']['humidity'],
-                    "wind_speed": round(max_wind * 3.6, 1),  # m/s to km/h
+                    "wind_speed": round(max_wind * 3.6, 1),          # m/s to km/h
                     "condition": worst_forecast['weather'][0]['main'].lower(),
                     "description_en": worst_forecast['weather'][0]['description'],
                     "description_de": de_forecast['weather'][0]['description'],
                     "icon": worst_forecast['weather'][0]['icon'],
-                    "rain_chance": round(max_pop * 100),  # Convert to percentage
+                    "rain_chance": round(max_pop * 100),             # Convert to percentage
                     "forecast_time": worst_forecast['dt']
                 }
 

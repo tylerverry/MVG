@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MVG Transport Display</title>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="MVG Display"/>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link 
@@ -218,13 +220,17 @@
 
     .destination {
       display: flex;
-      align-items: center; /* Center vertically */
+      align-items: center;
       font-size: 2rem;
       font-weight: 500;
       color: var(--text-primary);
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      grid-column: 3; /* Destination text in the third column */
-      height: 100%
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 1rem;
+      flex: 1;
+      min-width: 0;
     }
 
     .minutes {
@@ -263,9 +269,8 @@
 
     @media (max-width: 768px) {
       .header-info {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 0.3rem;
-        font-size: 0.9em;
       }
 
       .info-block {
@@ -280,6 +285,20 @@
 
       .info-label {
         font-size: 0.7rem;
+      }
+
+      .departure-card {
+        grid-template-columns: 8px 60px minmax(0, 1fr) 80px;
+      }
+
+      .destination {
+        font-size: 1.2rem;
+        padding: 0 0.5rem;
+      }
+
+      .minutes {
+        font-size: 1.6rem;
+        min-width: 60px;
       }
     }
 
@@ -305,6 +324,14 @@
       }
     
   </style>
+
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png"/>
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/icon-152.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/icon-180.png"/>
+  <link rel="apple-touch-icon" sizes="167x167" href="/static/icon-167.png"/>
+
+  <link rel="apple-touch-startup-image" href="/static/splash.png"/>
+  <title>MVG Transport Display</title>
 </head>
 <body>
   <canvas id="bg-canvas"></canvas>

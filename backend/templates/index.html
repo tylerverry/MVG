@@ -675,10 +675,51 @@
           lastUpdatedEl.textContent =
               `${translations[language].lastUpdated} ${secs} ${translations[language].seconds}`;
           lastUpdatedEl.classList.toggle('stale', secs > 45);
+
+          // Clear error messages if data is fresh
+          if (secs <= 45) {
+              const errorElements = document.querySelectorAll('.placeholder');
+              errorElements.forEach(el => {
+                  if (el.textContent === translations[language].errorLoading) {
+                      el.textContent = '';
+                  }
+              });
+          }
       }, 1000); // Update "Last Updated" time every second
 
       fetchData();
       setInterval(fetchData, 15000); // Fetch data every 15 seconds
+
+      function updateData() {
+          fetch('/api/data')
+              .then(response => response.json())
+              .then(data => {
+                  // Clear any existing error message when data loads successfully
+                  const errorDiv = document.getElementById('error-message');
+                  if (errorDiv) {
+                      errorDiv.style.display = 'none';
+                  }
+                  
+                  // Update the data display
+                  updateDisplay(data);
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  showError('Error loading data. Will try again soon.');
+              });
+      }
+
+      function showError(message) {
+          let errorDiv = document.getElementById('error-message');
+          if (!errorDiv) {
+              errorDiv = document.createElement('div');
+              errorDiv.id = 'error-message';
+              errorDiv.className = 'error-message';
+              document.body.insertBefore(errorDiv, document.body.firstChild);
+          }
+          errorDiv.textContent = message;
+          errorDiv.style.display = 'block';
+      }
   </script>
 </body>
 </html>

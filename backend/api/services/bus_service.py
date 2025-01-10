@@ -1,108 +1,145 @@
 import os
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
-from backend.api.services.bus_189_service import fetch_live_departures_189  # Import live data fetcher
+from mvg import MvgApi
+from pathlib import Path
 
-# Path to the log file
-LOG_FILE = "/mnt/NAS_SSD/NAS_SSD/AppData/mvg/bus_service_debug.log"
+# Constants
+ST_EMMERAM_ID = "de:09162:600"
+LINE_TO_FILTER = "189"
+DESTINATION_TO_FILTER = "Unterföhring"
+
+# Get the project root directory (3 levels up from this file)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+LOG_DIR = PROJECT_ROOT / "logs"
+LOG_FILE = "bus_service_debug.log"
+
+debug_logs = []
+
+def add_debug_log(message):
+    """Add a message to the debug logs."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    debug_logs.append(f"{timestamp} - {message}")
+    # Keep only the last 100 logs
+    if len(debug_logs) > 100:
+        debug_logs.pop(0)
 
 def write_to_log(message):
     """Ensure the log file exists and append debug information."""
-    log_dir = "/mnt/NAS_SSD/NAS_SSD/AppData/mvg"
-    log_file = os.path.join(log_dir, "bus_service_debug.log")
+    try:
+        # Create logs directory if it doesn't exist
+        LOG_DIR.mkdir(exist_ok=True)
+        
+        log_path = LOG_DIR / LOG_FILE
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"Writing to log: {log_path}")  # Debug print
+        with open(log_path, "a") as f:
+            f.write(f"{timestamp} - {message}\n")
+            
+    except Exception as e:
+        print(f"Logging error: {str(e)}")  # Fallback to console
 
-    # Ensure the directory exists
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+def fetch_live_departures_189():
+    """Fetch live API departures for the 189 bus toward Unterföhring."""
+    try:
+        add_debug_log("Starting MVG API request")
+        
+        mvg = MvgApi(ST_EMMERAM_ID)
+        departures = mvg.departures()
+        
+        add_debug_log(f"Raw MVG API response: {departures}")
+        
+        filtered_departures = []
+        current_time = int(datetime.now().timestamp())
+        
+        for dep in departures:
+            add_debug_log(f"Processing departure: {dep}")
+            
+            if dep["line"] == LINE_TO_FILTER and DESTINATION_TO_FILTER in dep["destination"]:
+                # Get planned and actual times
+                planned_time = dep["planned"]
+                actual_time = dep["time"]
+                
+                add_debug_log(f"Found 189 bus: planned={planned_time}, actual={actual_time}")
+                
+                # Calculate delay in minutes
+                delay = actual_time - planned_time
+                
+                minutes = int((actual_time - current_time) / 60)
+                
+                filtered_departures.append({
+                    "line": dep["line"],
+                    "destination": dep["destination"],
+                    "timestamp": actual_time,
+                    "minutes": minutes,
+                    "is_live": True,  # All MVG API responses are live
+                    "delay": int(delay)  # Delay in seconds
+                })
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(log_file, "a") as f:
-        f.write(f"{timestamp} - {message}\n")
+        add_debug_log(f"Filtered departures: {filtered_departures}")
+        return filtered_departures
+
+    except Exception as e:
+        add_debug_log(f"Error fetching live data: {str(e)}")
+        return []
 
 def get_bus_departures():
-    """
-    Generate the schedule for bus 189 to Unterföhring by combining:
-    1. Live API data (priority for immediate departures)
-    2. Hardcoded schedule (every 20 minutes from 06:08 to 19:48)
-    """
+    """Generate the schedule for bus 189 to Unterföhring."""
     try:
-        # Set up timezone handling
         berlin_tz = ZoneInfo("Europe/Berlin")
         utc_tz = ZoneInfo("UTC")
-
-        # Get current date/time in appropriate timezones
-        # We need Berlin time for schedule generation but UTC for timestamps
         current_date = datetime.now(berlin_tz).date()
         current_timestamp = int(datetime.now(utc_tz).timestamp())
 
-        # Define the start and end times for the regular schedule
-        # Bus 189 runs every 20 minutes between these times
-        start_time = time(6, 8)   # First bus at 06:08
-        end_time = time(19, 48)   # Last bus at 19:48
-
-        # Get real-time data first - this is highest priority
+        # Get live data first
         live_departures = fetch_live_departures_189()
-        # Add is_live flag to live departures
-        for dep in live_departures:
-            dep['is_live'] = True
         write_to_log(f"Live Departures: {live_departures}")
 
-        # Generate the regular schedule
+        # Generate hardcoded schedule
+        start_time = time(6, 8)   # First bus at 06:08
+        end_time = time(19, 48)   # Last bus at 19:48
+        
         hardcoded_departures = []
         current_time = start_time
         while current_time <= end_time:
-            # Convert each schedule time to a full datetime with timezone
             departure = datetime.combine(current_date, current_time).replace(tzinfo=berlin_tz)
-            # Convert to UTC timestamp for consistency
             utc_departure = int(departure.astimezone(utc_tz).timestamp())
             
-            # Only include future departures
             if utc_departure > current_timestamp:
                 hardcoded_departures.append({
                     "line": "189",
                     "destination": "Unterföhring",
                     "timestamp": utc_departure,
                     "minutes": int((utc_departure - current_timestamp) / 60),
-                    "is_live": False  # Add is_live flag to hardcoded departures
+                    "is_live": False
                 })
-            # Increment by 20 minutes for next departure
             current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=20)).time()
 
         write_to_log(f"Hardcoded Departures: {hardcoded_departures}")
 
-        # Combine live and scheduled departures
+        # Combine departures
         final_departures = []
         
-        # Step 1: Add all live departures first
-        # These take priority as they're real-time data
+        # Add all live departures first
         if live_departures:
             final_departures.extend(live_departures)
 
-        # Step 2: Add scheduled departures
-        if live_departures:
-            # If we have live data, find the last live departure time
+            # Only add scheduled departures that are at least 10 minutes after last live departure
             last_live_time = max(dep["timestamp"] for dep in live_departures)
-            # Only add scheduled departures that are at least 10 minutes after
-            # the last live departure to avoid conflicts
             future_hardcoded = [
                 dep for dep in hardcoded_departures 
-                if dep["timestamp"] > (last_live_time + 600)  # 600 seconds = 10 minutes
+                if dep["timestamp"] > (last_live_time + 600)
             ]
         else:
-            # If no live data, use all scheduled departures
             future_hardcoded = hardcoded_departures
 
-        # Add the filtered scheduled departures
         final_departures.extend(future_hardcoded)
-        
-        # Sort all departures by time
         final_departures.sort(key=lambda dep: dep["timestamp"])
 
         write_to_log(f"Final Reconciled Departures: {final_departures}")
-
         return {"buses": final_departures}
 
     except Exception as e:
-        # Log any errors and return empty list as fallback
         write_to_log(f"Error generating bus schedule: {str(e)}")
         return {"buses": []}

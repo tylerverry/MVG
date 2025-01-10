@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Now import from backend
 from backend.api.services.tram_service import get_tram_departures
-from backend.api.services.bus_service import get_bus_departures
+from backend.api.services.bus_service import get_bus_departures, debug_logs
 from backend.api.services.connection_service import calculate_connections
 from backend.api.services.weather_service import weather_service
 
@@ -76,6 +76,17 @@ def weather_debug():
             "current_weather": weather_service.get_weather(),
             "cache_time": weather_service.cache_time.isoformat() if weather_service.cache_time else None,
             "cache_valid": weather_service._is_cache_valid()
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug')
+def debug():
+    """Debug endpoint for bus service"""
+    try:
+        return jsonify({
+            "logs": debug_logs,
+            "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

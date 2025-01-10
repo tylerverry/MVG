@@ -42,6 +42,9 @@ def get_bus_departures():
 
         # Get real-time data first - this is highest priority
         live_departures = fetch_live_departures_189()
+        # Add is_live flag to live departures
+        for dep in live_departures:
+            dep['is_live'] = True
         write_to_log(f"Live Departures: {live_departures}")
 
         # Generate the regular schedule
@@ -59,7 +62,8 @@ def get_bus_departures():
                     "line": "189",
                     "destination": "Unterföhring",
                     "timestamp": utc_departure,
-                    "minutes": int((utc_departure - current_timestamp) / 60)
+                    "minutes": int((utc_departure - current_timestamp) / 60),
+                    "is_live": False  # Add is_live flag to hardcoded departures
                 })
             # Increment by 20 minutes for next departure
             current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=20)).time()

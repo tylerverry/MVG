@@ -86,7 +86,7 @@
 
     .header-info {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: .5rem;
       text-align: center;
     }
@@ -95,18 +95,24 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center; /* Centers everything vertically */
-      gap: 0.3rem; /* Adjusts spacing between elements */
+      justify-content: center;
+      gap: 0.2rem;
       padding: .5rem;
       background: rgba(255,255,255,0.05);
       border-radius: 12px;
       border: var(--card-border);
-      min-width: 120px; /* Ensures consistent width across all blocks */
-      text-align: center; /* Ensures text alignment is consistent */
+      min-width: 100px;
     }
 
     .info-label {
-      display: none;
+      display: block !important;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      opacity: 1;
+      visibility: visible;
     }
 
     .info-value {
@@ -257,8 +263,23 @@
 
     @media (max-width: 768px) {
       .header-info {
-        grid-template-columns: 1fr; /* Stacks the blocks vertically */
-        gap: 1rem;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.3rem;
+        font-size: 0.9em;
+      }
+
+      .info-block {
+        padding: 0.3rem;
+        min-width: auto;
+      }
+
+      .weather-icon {
+        width: 50px;
+        height: 50px;
+      }
+
+      .info-label {
+        font-size: 0.7rem;
       }
     }
 
@@ -292,25 +313,32 @@
     <div class="header" id="station-toggle">
       <div class="station-name">PRINZ-EUGEN-PARK</div>
       <div class="header-info">
-        <!-- Zeit (Time) Block -->
+        <!-- Time Block -->
         <div class="info-block">
-          <span class="info-label" data-translation-key="time"></span> <!-- Time will be translated -->
+          <span class="info-label" data-translation-key="time">Zeit</span>
           <span class="info-value time-big"></span>
           <span class="info-secondary date-small"></span>
         </div>
-      
-        <!-- Temperatur (Temperature) Block -->
+        
+        <!-- Temperature Block -->
         <div class="info-block">
-          <span class="info-label" data-translation-key="temperature"></span> <!-- Temperature will be translated -->
+          <span class="info-label" data-translation-key="temperature">Temperatur</span>
           <span class="info-value weather-temp">--°C</span>
           <span class="info-secondary weather-forecast">(↑--° ↓--°)</span>
         </div>
-      
-        <!-- Wetter (Weather) Block -->
+        
+        <!-- Weather Block -->
         <div class="info-block">
-          <span class="info-label" data-translation-key="weather"></span> <!-- Weather will be translated -->
+          <span class="info-label" data-translation-key="weather">Wetter</span>
           <img class="weather-icon" src="" alt="Wetter" />
           <span class="weather-description">--</span>
+        </div>
+
+        <!-- Precipitation Block -->
+        <div class="info-block">
+          <span class="info-label" data-translation-key="precipitation">Niederschlag</span>
+          <span class="info-value weather-precipitation">--%</span>
+          <span class="info-secondary weather-wind">--</span>
         </div>
       </div>
     </div>
@@ -400,7 +428,8 @@
               errorLoading: "Fehler beim Laden der Daten.",
               time: "Zeit",
               temperature: "Temperatur",
-              weather: "Wetter"
+              weather: "Wetter",
+              precipitation: "Niederschlag"
           },
           EN: {
               outward: "Away From Old Town",
@@ -410,7 +439,8 @@
               errorLoading: "Error loading data.",
               time: "Time",
               temperature: "Temperature",
-              weather: "Weather"
+              weather: "Weather",
+              precipitation: "Precipitation"
           }
       };
 
@@ -459,28 +489,50 @@
           return Math.round((celsius * 9) / 5 + 32);
       }
 
+      function getWindDescription(speed) {
+          // Beaufort scale in km/h with [English, German] descriptions
+          if (speed < 1)   return ['Calm', 'Windstill'];
+          if (speed < 6)   return ['Barely Noticeable', 'Kaum Spürbar'];
+          if (speed < 12)  return ['Light Breeze', 'Leichte Brise'];
+          if (speed < 20)  return ['Gentle Breeze', 'Schwache Brise'];
+          if (speed < 29)  return ['Moderate Breeze', 'Mäßige Brise'];
+          if (speed < 39)  return ['Fresh Breeze', 'Frische Brise'];
+          if (speed < 50)  return ['Strong Breeze', 'Starker Wind'];
+          if (speed < 62)  return ['High Wind', 'Steifer Wind'];
+          if (speed < 75)  return ['Gale', 'Stürmischer Wind'];
+          if (speed < 89)  return ['Strong Gale', 'Sturm'];
+          if (speed < 103) return ['Storm', 'Schwerer Sturm'];
+          return ['Violent Storm', 'Orkanartiger Sturm'];
+      }
+
       // Render weather data based on the current language
       function renderWeather(weather) {
           if (!weather) return;
 
-          // Dynamically calculate temp and unit based on language
+          // Temperature block
           const temp = language === 'EN' ? convertToFahrenheit(weather.temp) : weather.temp;
           const tempMin = language === 'EN' ? convertToFahrenheit(weather.temp_min) : weather.temp_min;
           const tempMax = language === 'EN' ? convertToFahrenheit(weather.temp_max) : weather.temp_max;
           const unit = language === 'EN' ? '°F' : '°C';
 
-          // Update temperature and forecast
           qsel('.weather-temp').textContent = `${temp}${unit}`;
-          qsel('.weather-forecast').textContent = `(↑${tempMax}${unit} ↓${tempMin}${unit})`;
+          qsel('.weather-forecast').textContent = `↑${tempMax}${unit} ↓${tempMin}${unit}`;
 
-          // Update weather description
-          qsel('.weather-description').textContent =
+          // Weather description
+          qsel('.weather-description').textContent = 
               language === 'EN' ? weather.description_en : weather.description_de;
 
           // Update weather icon
           const icon = qsel('.weather-icon');
           icon.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
           icon.alt = weather.description;
+
+          // Precipitation and wind
+          qsel('.weather-precipitation').textContent = `${weather.rain_chance}%`;
+          
+          // Get and set wind description based on current language
+          const [windEn, windDe] = getWindDescription(weather.wind_speed);
+          qsel('.weather-wind').textContent = language === 'EN' ? windEn : windDe;
       }
 
       /*
@@ -526,20 +578,31 @@
         LANGUAGE TOGGLE FUNCTIONALITY
         ------------------------------------------------
       */
-      sel('station-toggle').addEventListener('click', () => {
-          language = language === 'DE' ? 'EN' : 'DE'; // Toggle language
+      sel('station-toggle').addEventListener('click', async () => {
+          language = language === 'DE' ? 'EN' : 'DE';
+          
+          // Update all translation keys
+          document.querySelectorAll('[data-translation-key]').forEach(element => {
+              const key = element.getAttribute('data-translation-key');
+              if (translations[language][key]) {
+                  element.textContent = translations[language][key];
+              }
+          });
 
-          // Update text in direction headers
+          // Update headers
           sel('hdr-outward').textContent = translations[language].outward;
           sel('hdr-inward').textContent = translations[language].inward;
-
-          // Re-render weather with cached data
-          if (weatherService.cache) {
-              renderWeather(weatherService.cache);
-          }
-
-          // Update time and date format
           formatDateTime();
+          
+          // Force a fresh data fetch
+          try {
+              const response = await fetch('/api/data');
+              if (!response.ok) throw new Error('Network response was not ok');
+              const data = await response.json();
+              updateDisplay(data);
+          } catch (error) {
+              console.error('Error fetching data:', error);
+          }
       });
 
       /*
@@ -555,10 +618,10 @@
           
           // Convert to number and determine status
           const minutes = Number(waitMinutes);
-          if (minutes <= 5) {
-              return 'connection-good';      // 0-5 minutes: good connection
-          } else if (minutes <= 10) {
-              return 'connection-medium';    // 6-10 minutes: medium connection
+          if (minutes <= 4) {
+              return 'connection-good';      // 0-4 minutes: good connection
+          } else if (minutes <= 9) {
+              return 'connection-medium';    // 5-10 minutes: medium connection
           } else {
               return 'connection-poor';      // >10 minutes: poor connection
           }

@@ -547,9 +547,32 @@
         DEPARTURE LIST RENDERING (Partial Diff)
         ------------------------------------------------
       */
+      function getConnectionClass(waitMinutes) {
+          // If no wait minutes provided, return none
+          if (waitMinutes === undefined || waitMinutes === null) {
+              return 'connection-none';
+          }
+          
+          // Convert to number and determine status
+          const minutes = Number(waitMinutes);
+          if (minutes <= 5) {
+              return 'connection-good';      // 0-5 minutes: good connection
+          } else if (minutes <= 10) {
+              return 'connection-medium';    // 6-10 minutes: medium connection
+          } else {
+              return 'connection-poor';      // >10 minutes: poor connection
+          }
+      }
+
       function createTramCard(tram) {
           const card = document.createElement('div');
-          card.className = `departure-card ${getConnectionClass(tram.connection)}`;
+          
+          // Get connection class based on wait_minutes
+          const connectionClass = tram.connection 
+              ? getConnectionClass(tram.connection.wait_minutes)
+              : 'connection-none';
+          
+          card.className = `departure-card ${connectionClass}`;
           card.innerHTML = `
               <div class="status-bar"></div>
               <div class="line-box">${tram.line}</div>
@@ -572,7 +595,12 @@
       }
 
       function updateTramCard(card, tram) {
-          card.className = `departure-card ${getConnectionClass(tram.connection)}`;
+          // Update connection class based on wait_minutes
+          const connectionClass = tram.connection 
+              ? getConnectionClass(tram.connection.wait_minutes)
+              : 'connection-none';
+          
+          card.className = `departure-card ${connectionClass}`;
           card.querySelector('.line-box').textContent = tram.line;
           card.querySelector('.destination').textContent = tram.destination;
           const minutesEl = card.querySelector('.minutes');
@@ -625,11 +653,6 @@
         UTILITY FUNCTIONS FOR TRAM STATUS AND STYLING
         ------------------------------------------------
       */
-      function getConnectionClass(conn) {
-          if (!conn) return 'connection-none';
-          return `connection-${conn.status}`;
-      }
-
       function getMinuteColor(minutes) {
           if (minutes <= WALKING_TIME - 1) return 'soon';
           if (minutes <= WALKING_TIME + 1) return 'approaching';

@@ -1,27 +1,6 @@
 from datetime import datetime
 import logging
 
-def calculate_connection_status(layover_minutes):
-    """
-    Determine the quality of a connection based on layover time.
-    
-    Args:
-        layover_minutes (int): Minutes between tram arrival and bus departure
-                             (after accounting for walk time)
-    
-    Returns:
-        str: Connection status
-            "good"   -> Ideal connection (0-5 minutes wait)
-            "medium" -> Acceptable wait (6-10 minutes)
-            "poor"   -> Long wait (>10 minutes)
-    """
-    if 0 <= layover_minutes <= 5:
-        return "good"     # Ideal connection
-    elif 6 <= layover_minutes <= 10:
-        return "medium"   # Acceptable wait time
-    else:
-        return "poor"     # Too long wait
-
 def calculate_connections(northbound_trams, buses):
     """Calculate connection possibilities between northbound trams and the 189 bus."""
     try:
@@ -50,8 +29,8 @@ def calculate_connections(northbound_trams, buses):
                 layover_minutes = int((next_bus['timestamp'] - tram_arrival_at_SE) / 60) - TRAM_TO_BUS_WALK_TIME
                 
                 tram['connection'] = {
-                    "status": calculate_connection_status(layover_minutes),
-                    "next_bus_time": next_bus['timestamp']
+                    "next_bus_time": next_bus['timestamp'],
+                    "wait_minutes": layover_minutes  # Just pass the raw minutes instead of a status
                 }
             else:
                 tram['connection'] = None
@@ -59,5 +38,5 @@ def calculate_connections(northbound_trams, buses):
         return northbound_trams
 
     except Exception as e:
-        logger.error(f"Error calculating connections: {str(e)}")
+        logging.error(f"Error calculating connections: {str(e)}")
         return northbound_trams

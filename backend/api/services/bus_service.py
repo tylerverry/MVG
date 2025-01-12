@@ -96,27 +96,32 @@ def get_bus_departures():
         live_departures = fetch_live_departures_189()
         write_to_log(f"Live Departures: {live_departures}")
 
-        # Generate hardcoded schedule
-        start_time = time(6, 8)   # First bus at 06:08
-        end_time = time(19, 48)   # Last bus at 19:48
-        
-        hardcoded_departures = []
-        current_time = start_time
-        while current_time <= end_time:
-            departure = datetime.combine(current_date, current_time).replace(tzinfo=berlin_tz)
-            utc_departure = int(departure.astimezone(utc_tz).timestamp())
+        # Check if today is a weekday (Monday to Friday)
+        if current_date.weekday() < 5:  # 0 = Monday, 4 = Friday
+            # Generate hardcoded schedule
+            start_time = time(6, 8)   # First bus at 06:08
+            end_time = time(20, 28)    # Last bus at 20:28
             
-            if utc_departure > current_timestamp:
-                hardcoded_departures.append({
-                    "line": "189",
-                    "destination": "Unterföhring",
-                    "timestamp": utc_departure,
-                    "minutes": int((utc_departure - current_timestamp) / 60),
-                    "is_live": False
-                })
-            current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=20)).time()
+            hardcoded_departures = []
+            current_time = start_time
+            while current_time <= end_time:
+                departure = datetime.combine(current_date, current_time).replace(tzinfo=berlin_tz)
+                utc_departure = int(departure.astimezone(utc_tz).timestamp())
+                
+                if utc_departure > current_timestamp:
+                    hardcoded_departures.append({
+                        "line": "189",
+                        "destination": "Unterföhring",
+                        "timestamp": utc_departure,
+                        "minutes": int((utc_departure - current_timestamp) / 60),
+                        "is_live": False
+                    })
+                current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=20)).time()
 
-        write_to_log(f"Hardcoded Departures: {hardcoded_departures}")
+            write_to_log(f"Hardcoded Departures: {hardcoded_departures}")
+        else:
+            write_to_log("No bus service on weekends.")
+            hardcoded_departures = []  # No departures on weekends
 
         # Combine departures
         final_departures = []

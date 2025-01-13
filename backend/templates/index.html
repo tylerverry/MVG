@@ -749,18 +749,16 @@
 
       function createTramCard(tram) {
           const card = document.createElement('div');
-          
-          // Get connection class based on wait_minutes
           const connectionClass = tram.connection 
-              ? getConnectionClass(tram.connection.wait_minutes)
-              : 'connection-none';
-          
+            ? getConnectionClass(tram.connection.wait_minutes)
+            : 'connection-none';
+
           card.className = `departure-card ${connectionClass}`;
           card.innerHTML = `
-              <div class="status-bar"></div>
-              <div class="line-box">${tram.line}</div>
-              <div class="destination">${tram.destination}</div>
-              <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
+            <div class="status-bar${tram.connection?.is_live_bus ? ' live' : ''}"></div>
+            <div class="line-box">${tram.line}</div>
+            <div class="destination">${tram.destination}</div>
+            <div class="minutes ${getMinuteColor(tram.minutes)}">${tram.minutes}</div>
           `;
           return card;
       }
@@ -778,14 +776,31 @@
       }
 
       function updateTramCard(card, tram) {
-          // Update connection class based on wait_minutes
+          // 1. Determine connection class
           const connectionClass = tram.connection 
               ? getConnectionClass(tram.connection.wait_minutes)
               : 'connection-none';
           
+          // 2. Set the .departure-card class
           card.className = `departure-card ${connectionClass}`;
+
+          // 3. Target the status bar inside this card
+          const statusBar = card.querySelector('.status-bar');
+          if (statusBar) {
+              // Base class
+              statusBar.className = 'status-bar';
+
+              // If we have a live bus, add .live
+              if (tram.connection?.is_live_bus === true) {
+                  console.log('Pulsing bar for:', tram.line, tram.destination); // Debug logging
+                  statusBar.classList.add('live');
+              }
+          }
+
+          // 4. Update line, destination, minutes, etc.
           card.querySelector('.line-box').textContent = tram.line;
           card.querySelector('.destination').textContent = tram.destination;
+          
           const minutesEl = card.querySelector('.minutes');
           minutesEl.textContent = tram.minutes;
           minutesEl.className = `minutes ${getMinuteColor(tram.minutes)}`;

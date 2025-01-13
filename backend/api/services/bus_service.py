@@ -43,108 +43,85 @@ def write_to_log(message):
 def fetch_live_departures_189():
     """Fetch live API departures for the 189 bus toward Unterföhring."""
     try:
-        add_debug_log("Starting MVG API request")
-        
         mvg = MvgApi(ST_EMMERAM_ID)
         departures = mvg.departures()
-        
-        add_debug_log(f"Raw MVG API response: {departures}")
         
         filtered_departures = []
         current_time = int(datetime.now().timestamp())
         
         for dep in departures:
-            add_debug_log(f"Processing departure: {dep}")
-            
-            if dep["line"] == LINE_TO_FILTER and DESTINATION_TO_FILTER in dep["destination"]:
-                # Get planned and actual times
-                planned_time = dep["planned"]
-                actual_time = dep["time"]
+            if dep.get("line") == "189" and "unterföhring" in dep.get("destination", "").lower():
+                planned_time = dep.get("planned", 0)
+                actual_time = dep.get("time", planned_time)
                 
-                add_debug_log(f"Found 189 bus: planned={planned_time}, actual={actual_time}")
+                minutes = int((actual_time - current_time) // 60)
                 
-                # Calculate delay in minutes
-                delay = actual_time - planned_time
-                
-                minutes = int((actual_time - current_time) / 60)
-                
-                filtered_departures.append({
-                    "line": dep["line"],
-                    "destination": dep["destination"],
-                    "timestamp": actual_time,
-                    "minutes": minutes,
-                    "is_live": True,  # All MVG API responses are live
-                    "delay": int(delay)  # Delay in seconds
-                })
-
-        add_debug_log(f"Filtered departures: {filtered_departures}")
+                if minutes >= 0:
+                    filtered_departures.append({
+                        "line": "189",
+                        "destination": "Unterföhring",
+                        "timestamp": actual_time,
+                        "minutes": minutes,
+                        "is_live": True,
+                        "delay": actual_time - planned_time
+                    })
+        
         return filtered_departures
 
     except Exception as e:
-        add_debug_log(f"Error fetching live data: {str(e)}")
+        print(f"Error fetching live data: {str(e)}")
         return []
 
 def get_bus_departures():
     """Generate the schedule for bus 189 to Unterföhring."""
     try:
-        berlin_tz = ZoneInfo("Europe/Berlin")
-        utc_tz = ZoneInfo("UTC")
-        current_date = datetime.now(berlin_tz).date()
-        current_timestamp = int(datetime.now(utc_tz).timestamp())
-
+        current_timestamp = int(datetime.now().timestamp())
+        
         # Get live data first
         live_departures = fetch_live_departures_189()
-        write_to_log(f"Live Departures: {live_departures}")
-
-        # Check if today is a weekday (Monday to Friday)
-        if current_date.weekday() < 5:  # 0 = Monday, 4 = Friday
-            # Generate hardcoded schedule
-            start_time = time(6, 8)   # First bus at 06:08
-            end_time = time(20, 28)    # Last bus at 20:28
-            
-            hardcoded_departures = []
+        
+        # Generate hardcoded schedule
+        hardcoded_departures = []
+        if datetime.now().weekday() < 5:  # Monday-Friday only
+            start_time = time(6, 8)
+            end_time = time(20, 28)
             current_time = start_time
+            
             while current_time <= end_time:
-                departure = datetime.combine(current_date, current_time).replace(tzinfo=berlin_tz)
-                utc_departure = int(departure.astimezone(utc_tz).timestamp())
+                departure_time = datetime.combine(datetime.now().date(), current_time)
+                timestamp = int(departure_time.timestamp())
                 
-                if utc_departure > current_timestamp:
+                if timestamp > current_timestamp:
                     hardcoded_departures.append({
                         "line": "189",
                         "destination": "Unterföhring",
-                        "timestamp": utc_departure,
-                        "minutes": int((utc_departure - current_timestamp) / 60),
+                        "timestamp": timestamp,
+                        "minutes": int((timestamp - current_timestamp) // 60),
                         "is_live": False
                     })
-                current_time = (datetime.combine(current_date, current_time) + timedelta(minutes=20)).time()
-
-            write_to_log(f"Hardcoded Departures: {hardcoded_departures}")
-        else:
-            write_to_log("No bus service on weekends.")
-            hardcoded_departures = []  # No departures on weekends
-
+                current_time = (datetime.combine(datetime.now().date(), current_time) 
+                              + timedelta(minutes=20)).time()
+        
         # Combine departures
         final_departures = []
         
         # Add all live departures first
         if live_departures:
             final_departures.extend(live_departures)
-
+            
             # Only add scheduled departures that are at least 10 minutes after last live departure
             last_live_time = max(dep["timestamp"] for dep in live_departures)
             future_hardcoded = [
                 dep for dep in hardcoded_departures 
-                if dep["timestamp"] > (last_live_time + 600)
+                if dep["timestamp"] > (last_live_time + 600)  # 10 minutes
             ]
+            final_departures.extend(future_hardcoded)
         else:
-            future_hardcoded = hardcoded_departures
-
-        final_departures.extend(future_hardcoded)
-        final_departures.sort(key=lambda dep: dep["timestamp"])
-
-        write_to_log(f"Final Reconciled Departures: {final_departures}")
+            final_departures.extend(hardcoded_departures)
+        
+        final_departures.sort(key=lambda x: x["timestamp"])
         return {"buses": final_departures}
-
+        
     except Exception as e:
-        write_to_log(f"Error generating bus schedule: {str(e)}")
+        print(f"Error generating bus schedule: {str(e)}")
         return {"buses": []}

@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Multi-Platform Docker Image
 
 on:
   push:
@@ -21,10 +21,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          install: true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: tylerverry/mvg:latest

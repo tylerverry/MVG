@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mvg
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app
+    ports:
+      - "5000:5000"
+    command: ["python", "-m", "backend.api.main"]
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

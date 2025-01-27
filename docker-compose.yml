@@ -1,17 +1,16 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  mvg:
+    image: tylerverry/mvg:latest
     container_name: mvg
-    working_dir: /app
-    environment:
-      PYTHONPATH: /app
     ports:
       - "5000:5000"
-    command: ["python", "-m", "backend.api.main"]
+    volumes:
+      - /mnt/NAS_SSD/NAS_SSD/AppData/mvg:/app/data
+    environment:
+      - PYTHONPATH=/app
     networks:
       - app-network
+    restart: unless-stopped
 
 networks:
   app-network:
